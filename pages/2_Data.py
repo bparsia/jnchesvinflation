@@ -6,8 +6,13 @@ from utils import get_data, BASE_YEAR
 
 st.title("Raw Data")
 
+with st.sidebar:
+    st.header("Filters")
+    measure = st.radio("Inflation measure", ["CPI", "RPI"], horizontal=True)
+    st.divider()
+
 try:
-    df = get_data()
+    df = get_data(measure=measure)
 except FileNotFoundError:
     st.warning("No data found. Run the fetch and extract scripts first.")
     st.stop()
@@ -16,7 +21,6 @@ all_points = sorted(df["spine_point"].dropna().unique().astype(int))
 all_years = sorted(df["year"].unique())
 
 with st.sidebar:
-    st.header("Filters")
     selected_points = st.multiselect("Spine points", all_points, default=all_points)
     selected_years = st.multiselect("Settlement year", all_years, default=all_years)
 
@@ -29,7 +33,7 @@ display = filtered[[
 ]].copy()
 display.columns = [
     "Settlement year", "Effective date", "Spine point",
-    "Nominal salary (£)", f"Real salary (£, {BASE_YEAR} prices)"
+    "Nominal salary (£)", f"Real salary (£, {BASE_YEAR} {measure} prices)"
 ]
 
 st.dataframe(display, use_container_width=True, hide_index=True)

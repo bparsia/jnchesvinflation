@@ -6,13 +6,18 @@ import pandas as pd
 from utils import get_data, BASE_YEAR
 
 st.title("JNCHES Pay Spine vs Inflation")
+
+# Sidebar controls
+st.sidebar.header("Display options")
+measure = st.sidebar.radio("Inflation measure", ["CPI", "RPI"], horizontal=True)
+
 st.caption(
-    "HE national pay spine salary values, inflation-adjusted to "
-    f"{BASE_YEAR} prices using ONS CPI data."
+    f"HE national pay spine salary values, inflation-adjusted to "
+    f"{BASE_YEAR} prices using ONS {measure}."
 )
 
 try:
-    df = get_data()
+    df = get_data(measure=measure)
 except FileNotFoundError:
     st.warning(
         "No data found. Run `uv run python fetch.py` then `uv run python extract.py` "
@@ -20,13 +25,11 @@ except FileNotFoundError:
     )
     st.stop()
 
-# Sidebar controls
-st.sidebar.header("Display options")
-
 all_points = sorted(df["spine_point"].dropna().unique().astype(int))
 default_points = [1, 10, 20, 30, 40, 51]
 default_points = [p for p in default_points if p in all_points]
 
+st.sidebar.divider()
 selected = st.sidebar.multiselect(
     "Spine points to highlight",
     options=all_points,

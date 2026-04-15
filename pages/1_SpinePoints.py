@@ -6,10 +6,12 @@ import pandas as pd
 from utils import get_data, BASE_YEAR
 
 st.title("Spine Point Comparison")
-st.caption("Compare up to 5 individual spine points across years.")
+
+measure = st.sidebar.radio("Inflation measure", ["CPI", "RPI"], horizontal=True)
+st.caption(f"Compare up to 5 individual spine points across years. Real values in {BASE_YEAR} {measure} prices.")
 
 try:
-    df = get_data()
+    df = get_data(measure=measure)
 except FileNotFoundError:
     st.warning("No data found. Run the fetch and extract scripts first.")
     st.stop()
@@ -53,7 +55,7 @@ for idx, sp in enumerate(selected):
         ))
 
 fig.update_layout(
-    title=f"Spine point salaries over time ({BASE_YEAR} prices)",
+    title=f"Spine point salaries over time ({BASE_YEAR} {measure} prices)",
     xaxis_title="Effective date",
     yaxis_title=f"Salary (£)",
     hovermode="x unified",

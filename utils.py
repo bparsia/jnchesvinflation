@@ -7,9 +7,10 @@ ROOT = Path(__file__).parent
 PROCESSED = ROOT / "data" / "processed"
 SPINE_CSV = PROCESSED / "spine_points.csv"
 
-# UK CPI annual averages (2015=100 base, extended to 2025).
-# Source: ONS series D7BT / CPIH. Values are annual averages.
-# https://www.ons.gov.uk/economy/inflationandpriceindices
+# All indices normalised to 2015=100. Annual averages.
+# Source: ONS. https://www.ons.gov.uk/economy/inflationandpriceindices
+
+# CPI (CPIH, series D7BT)
 CPI = {
     2006: 76.8,
     2007: 79.0,
@@ -33,6 +34,32 @@ CPI = {
     2025: 138.0,  # estimate
 }
 
+# RPI (All Items, series CHAW), normalised to 2015=100
+RPI = {
+    2006: 76.6,
+    2007: 79.9,
+    2008: 83.1,
+    2009: 82.7,
+    2010: 86.5,
+    2011: 91.0,
+    2012: 93.9,
+    2013: 96.7,
+    2014: 98.9,
+    2015: 100.0,
+    2016: 101.8,
+    2017: 105.1,
+    2018: 108.3,
+    2019: 111.4,
+    2020: 113.2,
+    2021: 120.2,
+    2022: 136.8,
+    2023: 146.3,
+    2024: 152.0,
+    2025: 156.7,  # estimate
+}
+
+INDICES = {"CPI": CPI, "RPI": RPI}
+
 BASE_YEAR = 2024
 
 
@@ -42,7 +69,7 @@ def _mtime() -> float:
     return 0.0
 
 
-def load_spine_data(mtime: float) -> pd.DataFrame:  # noqa: ARG001 (mtime used as cache key)
+def load_spine_data(mtime: float, measure: str = "CPI") -> pd.DataFrame:  # noqa: ARG001
     df = pd.read_csv(SPINE_CSV)
     df["salary"] = pd.to_numeric(df["salary"], errors="coerce")
     df["spine_point"] = pd.to_numeric(df["spine_point"], errors="coerce")
@@ -65,13 +92,14 @@ def load_spine_data(mtime: float) -> pd.DataFrame:  # noqa: ARG001 (mtime used a
     df["date"] = pd.to_datetime(df["effective_date"], format="%d %B %Y", errors="coerce")
     df["date_year"] = df["date"].dt.year
 
-    # Inflation-adjust to BASE_YEAR
-    base_cpi = CPI[BASE_YEAR]
-    df["cpi"] = df["date_year"].map(CPI)
-    df["real_salary"] = (df["salary"] * base_cpi / df["cpi"]).round(0).astype("Int64")
+    # Inflation-adjust to BASE_YEAR using selected index
+    index = INDICES[measure]
+    base_val = index[BASE_YEAR]
+    df["index_val"] = df["date_year"].map(index)
+    df["real_salary"] = (df["salary"] * base_val / df["index_val"]).round(0).astype("Int64")
 
     return df.dropna(subset=["salary", "spine_point", "date"])
 
 
-def get_data() -> pd.DataFrame:
-    return load_spine_data(_mtime())
+def get_data(measure: str = "CPI") -> pd.DataFrame:
+    return load_spine_data(_mtime(), measure=measure)
