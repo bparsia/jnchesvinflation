@@ -1,18 +1,18 @@
-year,label,url,accessible
-2024-25,Full and Final offer - 27 August 2024,https://uceaprivate.blob.core.windows.net/ucea/Public/UCEA%20Full%20and%20Final%20offer%20-%2027%20August%202024.pdf,manual
-2023-24,New JNCHES 2023-24 pay outcome,https://uceaprivate.blob.core.windows.net/ucea/Public/3e04d1abccccee1190790022481b5359_UCEA%20Uplift%20Letter%20-%2024%20Feb%202023.pdf,manual
-2022-23,New JNCHES 2022-23 pay outcome,https://uceaprivate.blob.core.windows.net/ucea/Public/156f31fba8cfec11a7b5002248003e44_UCEA%20final%20offer%20letter%20-%209%20May%202022.pdf,manual
-2021-22,New JNCHES 2021-22 pay outcome,https://uceaprivate.blob.core.windows.net/ucea/Public/cf70e75a61b2eb118236000d3a874155_UCEA%20Final%20offer%20letter%20-%2011%20May%202021.pdf,manual
-2020-21,New JNCHES 2020-21 pay outcome,https://uceaprivate.blob.core.windows.net/ucea/Public/f7351a07d62feb11a813000d3a86aa92_UCEA%20Final%20Offer%202020-21%20round%20-%2018%20November%202020.pdf,manual
-2019-20,New JNCHES 2019-20 pay outcome,https://uceaprivate.blob.core.windows.net/ucea/Public/c1d215d44bbaeb1182360022480006da_New%20JNCHES%202019-20%20pay%20outcome.pdf,manual
-2018-19,New JNCHES 18-19 outcome March 2019,https://uceastorage.blob.core.windows.net/ucea/download.cfm/docid/new_jnches_18-19_outcome_march_2019.pdf,auto
-2017-18,2017-18 New JNCHES settlement,https://uceastorage.blob.core.windows.net/ucea/download.cfm/docid/nj_2017-18_new_jnches_settlement_76010.pdf,auto
-2016-17,2016-17 New JNCHES settlement,https://uceastorage.blob.core.windows.net/ucea/download.cfm/docid/2016-17_new_jnches_settlement.pdf,auto
-2015-16,New JNCHES pay settlement 2015-16,https://uceastorage.blob.core.windows.net/ucea/download.cfm/docid/new_jnches_pay_settlement_2015-16.pdf,auto
-2014-15,New JNCHES Agreement 2014-15,https://uceastorage.blob.core.windows.net/ucea/download.cfm/docid/new_jnches_agreement_2014-15.pdf,auto
-2013-14,New JNCHES 2013-14 pay outcome,https://uceastorage.blob.core.windows.net/ucea/download.cfm/docid/new_jnches_2013-14_pay_outcome.pdf,auto
-2012-13,Pay Agreement 2012-13,https://uceastorage.blob.core.windows.net/ucea/download.cfm/docid/pay_settlement_2012-13.pdf,auto
-2011-12,Pay Agreement 2011-12,https://uceastorage.blob.core.windows.net/ucea/download.cfm/docid/pay_settlement_2011-12.pdf,auto
-2010-11,Pay Agreement 2010-11,https://uceastorage.blob.core.windows.net/ucea/download.cfm/docid/2009-_2010_pay_agreement.pdf,auto
-2009-10,Pay Agreement 2009-10,https://uceastorage.blob.core.windows.net/ucea/download.cfm/docid/pay_agreement_2009_-_2010.pdf,auto
-2006-09,Pay Agreement 2006-9,https://uceaprivate.blob.core.windows.net/ucea/Public/2006-09%20PAY%20AGREEMENT.pdf,manual
+year,label,url,accessible,manual_filename
+2024-25,Full and Final offer - 27 August 2024,https://uceaprivate.blob.core.windows.net/ucea/Public/UCEA%20Full%20and%20Final%20offer%20-%2027%20August%202024.pdf,manual,UCEA Full and Final offer - 27 August 2024.pdf
+2023-24,New JNCHES 2023-24 pay outcome,https://uceaprivate.blob.core.windows.net/ucea/Public/3e04d1abccccee1190790022481b5359_UCEA%20Uplift%20Letter%20-%2024%20Feb%202023.pdf,manual,3e04d1abccccee1190790022481b5359_UCEA Uplift Letter - 24 Feb 2023.pdf
+2022-23,New JNCHES 2022-23 pay outcome,https://uceaprivate.blob.core.windows.net/ucea/Public/156f31fba8cfec11a7b5002248003e44_UCEA%20final%20offer%20letter%20-%209%20May%202022.pdf,manual,156f31fba8cfec11a7b5002248003e44_UCEA final offer letter - 9 May 2022.pdf
+2021-22,New JNCHES 2021-22 pay outcome,https://uceaprivate.blob.core.windows.net/ucea/Public/cf70e75a61b2eb118236000d3a874155_UCEA%20Final%20offer%20letter%20-%2011%20May%202021.pdf,manual,cf70e75a61b2eb118236000d3a874155_UCEA Final offer letter - 11 May 2021.pdf
+2020-21,New JNCHES 2020-21 pay outcome,https://uceaprivate.blob.core.windows.net/ucea/Public/f7351a07d62feb11a813000d3a86aa92_UCEA%20Final%20Offer%202020-21%20round%20-%2018%20November%202020.pdf,manual,
+2019-20,New JNCHES 2019-20 pay outcome,https://uceaprivate.blob.core.windows.net/ucea/Public/c1d215d44bbaeb1182360022480006da_New%20JNCHES%202019-20%20pay%20outcome.pdf,manual,c1d215d44bbaeb1182360022480006da_New JNCHES 2019-20 pay outcome.pdf
+2018-19,New JNCHES 18-19 outcome March 2019,https://uceastorage.blob.core.windows.net/ucea/download.cfm/docid/new_jnches_18-19_outcome_march_2019.pdf,auto,
+2017-18,2017-18 New JNCHES settlement,https://uceastorage.blob.core.windows.net/ucea/download.cfm/docid/nj_2017-18_new_jnches_settlement_76010.pdf,auto,
+2016-17,2016-17 New JNCHES settlement,https://uceastorage.blob.core.windows.net/ucea/download.cfm/docid/2016-17_new_jnches_settlement.pdf,auto,
+2015-16,New JNCHES pay settlement 2015-16,https://uceastorage.blob.core.windows.net/ucea/download.cfm/docid/new_jnches_pay_settlement_2015-16.pdf,auto,
+2014-15,New JNCHES Agreement 2014-15,https://uceastorage.blob.core.windows.net/ucea/download.cfm/docid/new_jnches_agreement_2014-15.pdf,auto,
+2013-14,New JNCHES 2013-14 pay outcome,https://uceastorage.blob.core.windows.net/ucea/download.cfm/docid/new_jnches_2013-14_pay_outcome.pdf,auto,
+2012-13,Pay Agreement 2012-13,https://uceastorage.blob.core.windows.net/ucea/download.cfm/docid/pay_settlement_2012-13.pdf,auto,
+2011-12,Pay Agreement 2011-12,https://uceastorage.blob.core.windows.net/ucea/download.cfm/docid/pay_settlement_2011-12.pdf,auto,
+2010-11,Pay Agreement 2010-11,https://uceastorage.blob.core.windows.net/ucea/download.cfm/docid/2009-_2010_pay_agreement.pdf,auto,
+2009-10,Pay Agreement 2009-10,https://uceastorage.blob.core.windows.net/ucea/download.cfm/docid/pay_agreement_2009_-_2010.pdf,auto,
+2006-09,Pay Agreement 2006-9,https://uceaprivate.blob.core.windows.net/ucea/Public/2006-09%20PAY%20AGREEMENT.pdf,manual,2006-09 PAY AGREEMENT.pdf
