@@ -17,13 +17,22 @@ except FileNotFoundError:
     st.stop()
 
 all_points = sorted(df["spine_point"].dropna().unique().astype(int))
+options = [None] + all_points
 
 cols = st.columns(5)
 selected = []
+defaults = [1, 10, 20, None, None]
 for i, col in enumerate(cols):
-    default = [1, 10, 20, 30, 51][i] if [1, 10, 20, 30, 51][i] in all_points else all_points[i]
-    sp = col.selectbox(f"Point {i+1}", options=all_points, index=all_points.index(default), key=f"sp_{i}")
-    selected.append(sp)
+    default = defaults[i] if defaults[i] in all_points else (all_points[0] if defaults[i] is not None else None)
+    sp = col.selectbox(
+        f"Point {i+1}",
+        options=options,
+        index=options.index(default),
+        format_func=lambda x: "None" if x is None else str(x),
+        key=f"sp_{i}",
+    )
+    if sp is not None:
+        selected.append(sp)
 
 show_nominal = st.checkbox("Show nominal salaries alongside real", value=True)
 
