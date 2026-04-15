@@ -9,7 +9,8 @@ national pay spine for UK Higher Education, comparing salary values over time ad
 ### Data sources
 
 - Pay settlement documents: [UCEA Previous Pay Settlements](https://www.ucea.ac.uk/our-work/collective-pay-negotiations-landing/Previous-Pay-Settlements/)
-- Inflation adjustment: ONS CPI annual averages (series D7BT / CPIH), base year 2015=100
+- Inflation adjustment (CPI): ONS CPIH annual averages (series D7BT), base year 2015=100
+- Inflation adjustment (RPI): ONS RPI All Items annual averages (series CHAW), base year 2015=100
 
 ### Coverage and missing years
 
