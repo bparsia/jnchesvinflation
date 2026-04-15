@@ -93,9 +93,9 @@ def closest_date(target_str: str) -> str:
     return all_dates_sorted.loc[idx, "effective_date"]
 
 PRESETS = {
+    "Start of data": all_dates_sorted["effective_date"].iloc[0],
     "Since 2009": closest_date("2009-08-01"),
     "Since 2015": closest_date("2015-08-01"),
-    "Pre-COVID (2019)": closest_date("2019-08-01"),
     "Since COVID (2020)": closest_date("2020-08-01"),
     "~5 years ago": closest_date(str(latest_date - pd.DateOffset(years=5))),
     "~10 years ago": closest_date(str(latest_date - pd.DateOffset(years=10))),
