@@ -68,25 +68,75 @@ fig.update_layout(
 )
 st.plotly_chart(fig, use_container_width=True)
 
-# Summary stats
-st.subheader("Change since earliest record")
+# ---------------------------------------------------------------------------
+# Summary stats with configurable baseline
+# ---------------------------------------------------------------------------
+st.subheader("Change from baseline")
+
+# Build available dates sorted chronologically
+all_dates_sorted = (
+    df[["effective_date", "date"]]
+    .drop_duplicates()
+    .sort_values("date")
+)
+date_labels = {
+    row["effective_date"]: row["date"].strftime("%b %Y")
+    for _, row in all_dates_sorted.iterrows()
+}
+
+latest_date = all_dates_sorted["date"].max()
+
+# Presets: find the closest available effective_date to each target
+def closest_date(target_str: str) -> str:
+    target = pd.Timestamp(target_str)
+    idx = (all_dates_sorted["date"] - target).abs().idxmin()
+    return all_dates_sorted.loc[idx, "effective_date"]
+
+PRESETS = {
+    "Since 2009": closest_date("2009-08-01"),
+    "Since 2015": closest_date("2015-08-01"),
+    "Pre-COVID (2019)": closest_date("2019-08-01"),
+    "Since COVID (2020)": closest_date("2020-08-01"),
+    "~5 years ago": closest_date(str(latest_date - pd.DateOffset(years=5))),
+    "~10 years ago": closest_date(str(latest_date - pd.DateOffset(years=10))),
+    "Custom…": None,
+}
+
+preset_choice = st.radio(
+    "Baseline",
+    list(PRESETS.keys()),
+    index=0,
+    horizontal=True,
+)
+
+if preset_choice == "Custom…":
+    baseline_date = st.selectbox(
+        "Choose baseline date",
+        options=list(date_labels.keys())[:-1],   # exclude the latest
+        format_func=lambda d: date_labels[d],
+    )
+else:
+    baseline_date = PRESETS[preset_choice]
+
+baseline_label = date_labels[baseline_date]
+latest_label = date_labels[all_dates_sorted["effective_date"].iloc[-1]]
+
 summary_rows = []
 for sp in (selected if selected else all_points):
-    sub = df[df["spine_point"] == sp].sort_values("date")
-    if len(sub) < 2:
+    base_rows = df[(df["spine_point"] == sp) & (df["effective_date"] == baseline_date)]
+    last_rows = df[(df["spine_point"] == sp) & (df["date"] == latest_date)]
+    if base_rows.empty or last_rows.empty:
         continue
-    first = sub.iloc[0]
-    last = sub.iloc[-1]
+    first = base_rows.iloc[0]
+    last = last_rows.iloc[0]
     nominal_change = (last["salary"] - first["salary"]) / first["salary"] * 100
     real_change = (last["real_salary"] - first["real_salary"]) / first["real_salary"] * 100
     summary_rows.append({
         "Spine point": int(sp),
-        "Earliest salary (£)": f"{first['salary']:,}",
-        "Latest salary (£)": f"{last['salary']:,}",
-        "Nominal change (%)": f"{nominal_change:+.1f}%",
-        f"Real change (%, {BASE_YEAR} prices)": f"{real_change:+.1f}%",
-        "Earliest date": first["date"].strftime("%b %Y"),
-        "Latest date": last["date"].strftime("%b %Y"),
+        f"Salary {baseline_label} (£)": f"{int(first['salary']):,}",
+        f"Salary {latest_label} (£)": f"{int(last['salary']):,}",
+        "Nominal change": f"{nominal_change:+.1f}%",
+        f"Real change ({measure})": f"{real_change:+.1f}%",
     })
 
 if summary_rows:
@@ -94,3 +144,5 @@ if summary_rows:
         pd.DataFrame(summary_rows).set_index("Spine point"),
         use_container_width=True,
     )
+else:
+    st.info("No data available for the selected spine points at this baseline date.")
