@@ -12,6 +12,7 @@ SPINE_CSV = PROCESSED / "spine_points.csv"
 
 # CPI (CPIH, series D7BT)
 CPI = {
+    2005: 74.9,
     2006: 76.8,
     2007: 79.0,
     2008: 82.7,
@@ -36,6 +37,7 @@ CPI = {
 
 # RPI (All Items, series CHAW), normalised to 2015=100
 RPI = {
+    2005: 74.3,
     2006: 76.6,
     2007: 79.9,
     2008: 83.1,
@@ -96,7 +98,7 @@ def load_spine_data(mtime: float, measure: str = "CPI") -> pd.DataFrame:  # noqa
     index = INDICES[measure]
     base_val = index[BASE_YEAR]
     df["index_val"] = df["date_year"].map(index)
-    df["real_salary"] = (df["salary"] * base_val / df["index_val"]).round(0).astype("Int64")
+    df["real_salary"] = (df["salary"] * base_val / df["index_val"]).round(0)
 
     return df.dropna(subset=["salary", "spine_point", "date"])
 
