@@ -3,7 +3,8 @@ from pathlib import Path
 
 import pandas as pd
 
-PROCESSED = Path("data/processed")
+ROOT = Path(__file__).parent
+PROCESSED = ROOT / "data" / "processed"
 SPINE_CSV = PROCESSED / "spine_points.csv"
 
 # UK CPI annual averages (2015=100 base, extended to 2025).
