@@ -35,12 +35,20 @@ start_year = st.sidebar.selectbox(
 st.sidebar.divider()
 st.sidebar.subheader("CI scenario parameters")
 
-funding_ratio = st.sidebar.slider(
-    "Assumed funding ratio (%)",
+initial_fr = st.sidebar.slider(
+    "Initial funding ratio (%)",
     min_value=70, max_value=130, value=100, step=5,
+    help="Funding ratio at retirement year. Evolves each year based on real asset return.",
+)
+
+real_return = st.sidebar.slider(
+    "Real asset return (% p.a.)",
+    min_value=-2.0, max_value=8.0, value=2.0, step=0.5,
     help=(
-        "Constant funding ratio assumed throughout the projection for all CI scenarios. "
-        "≥ 100% = fully funded (CI triggers); < 100% = underfunded."
+        "Annual return on assets above CPI. "
+        "FR improves when positive (assets outpace liabilities), "
+        "deteriorates when negative. CPI effects roughly cancel between "
+        "asset returns and liability growth."
     ),
 )
 
@@ -92,20 +100,33 @@ def annual_cpi_rate(year: int) -> float:
 # ---------------------------------------------------------------------------
 hybrid_label = f"Hybrid CI (≥{hybrid_floor:.1f}% guaranteed)"
 
-SCENARIOS = [
-    # (label,         rule_fn,                                       colour,    dash)
-    ("Soft cap",      lambda r: soft_cap_rate(r),                    "#636EFA", "solid"),
-    ("Full CI",       lambda r: full_ci_rate(r, funding_ratio),      "#EF553B", "solid"),
-    (hybrid_label,    lambda r: hybrid_ci_rate(r, funding_ratio, hybrid_floor), "#00CC96", "solid"),
-    ("Graded CI",     lambda r: graded_ci_rate(r, funding_ratio),    "#AB63FA", "solid"),
-]
-
 NOINDEX_COLOUR = "#888888"
+
+# ---------------------------------------------------------------------------
+# Dynamic funding ratio
+# ---------------------------------------------------------------------------
+projection_years = [y for y in common_years if y >= start_year]
+
+# FR evolves as: FR_t = FR_0 × (1 + real_return)^t
+# Rationale: nominal asset return ≈ real_return + CPI; liabilities grow at CPI;
+# so CPI largely cancels and FR change is driven by the real return alone.
+funding_ratios = {
+    year: initial_fr * ((1 + real_return / 100) ** i)
+    for i, year in enumerate(projection_years)
+}
+
+# Scenarios: rules now take (cpi_rate, year) so they can look up the year's FR
+SCENARIOS = [
+    # (label,         rule_fn(cpi_rate, year),                                      colour,    dash)
+    ("Soft cap",      lambda r, y: soft_cap_rate(r),                                "#636EFA", "solid"),
+    ("Full CI",       lambda r, y: full_ci_rate(r, funding_ratios[y]),              "#EF553B", "solid"),
+    (hybrid_label,    lambda r, y: hybrid_ci_rate(r, funding_ratios[y], hybrid_floor), "#00CC96", "solid"),
+    ("Graded CI",     lambda r, y: graded_ci_rate(r, funding_ratios[y]),            "#AB63FA", "solid"),
+]
 
 # ---------------------------------------------------------------------------
 # Run projection
 # ---------------------------------------------------------------------------
-projection_years = [y for y in common_years if y >= start_year]
 running = {label: 1000.0 for label, *_ in SCENARIOS}
 
 nominal_series  = {label: [] for label, *_ in SCENARIOS}
@@ -123,7 +144,7 @@ for i, year in enumerate(projection_years):
     cpi_rate_series.append(cpi_rate)
 
     for label, rule, colour, dash in SCENARIOS:
-        inc = rule(cpi_rate) if i > 0 else 0.0
+        inc = rule(cpi_rate, year) if i > 0 else 0.0
         if i > 0:
             running[label] *= (1 + inc / 100)
         nominal_series[label].append(running[label])
@@ -166,6 +187,34 @@ fig_nom.update_layout(
     yaxis=dict(rangemode="tozero"),
 )
 st.plotly_chart(fig_nom, use_container_width=True)
+
+# ---------------------------------------------------------------------------
+# Chart 1b: Funding ratio trajectory
+# ---------------------------------------------------------------------------
+st.subheader("Funding ratio over time")
+st.caption(
+    f"Starting at {initial_fr}%, evolving at {real_return:+.1f}% real return p.a. "
+    "The 100% line is the CI trigger for Full CI and Hybrid CI."
+)
+
+fig_fr = go.Figure()
+fig_fr.add_hline(y=100, line_dash="dash", line_color="lightgray", line_width=1,
+                 annotation_text="100% (fully funded)", annotation_position="top left")
+fig_fr.add_trace(go.Scatter(
+    x=projection_years,
+    y=[funding_ratios[y] for y in projection_years],
+    mode="lines+markers",
+    name="Funding ratio",
+    line=dict(color="#FFA15A", width=2),
+    hovertemplate="%{x}<br>FR: %{y:.1f}%<extra></extra>",
+))
+fig_fr.update_layout(
+    xaxis_title="Year",
+    yaxis_title="Funding ratio (%)",
+    showlegend=False,
+    yaxis=dict(ticksuffix="%"),
+)
+st.plotly_chart(fig_fr, use_container_width=True)
 
 # ---------------------------------------------------------------------------
 # Chart 2: Real monthly pension (purchasing power)
@@ -259,6 +308,7 @@ with st.expander("Year-by-year detail"):
         row = {
             "Year": year,
             "CPI rate (%)": f"{cpi_rate_series[i]:.1f}%",
+            "Funding ratio (%)": f"{funding_ratios[year]:.1f}%",
         }
         for label, rule, colour, dash in SCENARIOS:
             row[f"{label} — increase"] = f"{increase_series[label][i]:.1f}%"
@@ -282,7 +332,7 @@ with st.expander("How the soft cap is calculated"):
 
 **Example**: CPI = {cpi_rate_series[-1]:.1f}% → soft cap gives {soft_cap_rate(cpi_rate_series[-1]):.1f}%
 
-**CI scenarios** assume a constant funding ratio of **{funding_ratio}%** throughout.
+**CI scenarios** start at **{initial_fr}%** funding ratio, evolving at **{real_return:+.1f}%** real return p.a.
 - **Full CI**: pays full CPI if ≥ 100% funded; 0% otherwise
 - **Hybrid CI**: always pays up to {hybrid_floor:.1f}%; pays remainder (up to CPI) only if ≥ 100% funded
 - **Graded CI**: pays CPI × funding_ratio/100 (proportional; no binary trigger)
