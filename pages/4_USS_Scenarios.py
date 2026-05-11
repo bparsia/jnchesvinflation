@@ -66,6 +66,7 @@ hybrid_floor = st.sidebar.slider(
 upside_mode = st.sidebar.selectbox(
     "Upside when funded",
     ["CPI only", "RPI", "Return sharing"],
+    index=2,
     help=(
         "What CI pays when the fund is sufficiently funded.\n\n"
         "**CPI only** — maintains real value, no enhancement.\n"
@@ -397,56 +398,56 @@ with tab_hh:
     # ---- Final year distribution ----
     st.subheader(f"Final year ({projection_years[-1]}) outcome distribution")
     st.caption(
-        "Horizontal box plots show the spread of real pension outcomes. "
-        "Whiskers = 5th–95th percentile. Soft cap and no-indexation are single values."
+        "Each scenario on its own row. Boxes: 25th–75th percentile; whiskers: 5th–95th. "
+        "Deterministic scenarios (no indexation, soft cap) show as a single line."
     )
 
     end_cpi_defl = cpi_defl[-1]
     end_rpi_defl = rpi_defl[-1]
 
-    fig_box = go.Figure()
-
-    # Stochastic scenarios — raw simulation data → Plotly computes quartiles
-    for label, pension_arr, colour in [
-        ("Graded CI",   pension_gci, COLOURS["Graded CI"]),
-        (hybrid_label,  pension_hci, COLOURS["Hybrid CI"]),
-        ("Full CI",     pension_fci, COLOURS["Full CI"]),
-    ]:
-        real_vals = pension_arr[-1] * end_cpi_defl
-        fig_box.add_trace(go.Box(
-            x=real_vals,
-            name=label,
+    def box_trace(name, p5, p25, med, p75, p95, colour):
+        return go.Box(
+            name=name,
             orientation="h",
+            q1=[p25], median=[med], q3=[p75],
+            lowerfence=[p5], upperfence=[p95],
             marker_color=colour,
+            line_color=colour,
+            fillcolor=hex_rgba(colour, 0.3),
             boxpoints=False,
-            q1=[np.percentile(real_vals, 25)],
-            median=[np.percentile(real_vals, 50)],
-            q3=[np.percentile(real_vals, 75)],
-            lowerfence=[np.percentile(real_vals, 5)],
-            upperfence=[np.percentile(real_vals, 95)],
-        ))
+            hovertemplate=f"{name}<br>p5: £%{{lowerfence:,.0f}}<br>Q1: £%{{q1:,.0f}}<br>"
+                          f"Median: £%{{median:,.0f}}<br>Q3: £%{{q3:,.0f}}<br>"
+                          f"p95: £%{{upperfence:,.0f}}<extra></extra>",
+        )
 
-    # Deterministic scenarios — single vertical line markers
-    for label, val in [
-        ("Soft cap",          pension_sc[-1] * end_cpi_defl),
-        ("No index (RPI)",    1000 * end_rpi_defl),
-        ("No index (CPI)",    1000 * end_cpi_defl),
-    ]:
-        colour = COLOURS.get("Soft cap") if "Soft" in label else GREY
-        fig_box.add_trace(go.Scatter(
-            x=[val], y=[label], mode="markers",
-            marker=dict(color=colour, size=14, symbol="diamond"),
-            name=label, showlegend=False,
-            hovertemplate=f"{label}<br>£%{{x:,.0f}}<extra></extra>",
-        ))
+    def det_box(name, val, colour):
+        """Deterministic scenario — box collapses to a single vertical line."""
+        return box_trace(name, val, val, val, val, val, colour)
+
+    fig_box = go.Figure([
+        # Bottom to top = first to last in list (Plotly reverses y order for Box)
+        box_trace("Graded CI",
+                  gci_rp[5][-1], gci_rp[25][-1], gci_rp[50][-1],
+                  gci_rp[75][-1], gci_rp[95][-1], COLOURS["Graded CI"]),
+        box_trace(hybrid_label,
+                  hci_rp[5][-1], hci_rp[25][-1], hci_rp[50][-1],
+                  hci_rp[75][-1], hci_rp[95][-1], COLOURS["Hybrid CI"]),
+        box_trace("Full CI",
+                  fci_rp[5][-1], fci_rp[25][-1], fci_rp[50][-1],
+                  fci_rp[75][-1], fci_rp[95][-1], COLOURS["Full CI"]),
+        det_box("Soft cap",       pension_sc[-1] * end_cpi_defl, COLOURS["Soft cap"]),
+        det_box("No index (RPI)", 1000 * end_rpi_defl,           GREY),
+        det_box("No index (CPI)", 1000 * end_cpi_defl,           GREY),
+    ])
 
     fig_box.add_vline(x=1000, line_dash="dash", line_color="lightgray", line_width=1,
-                      annotation_text="£1,000", annotation_position="top")
+                      annotation_text="£1,000 (full purchasing power)",
+                      annotation_position="top right")
     fig_box.update_layout(
         xaxis_title=f"Monthly pension (£, {start_year} prices)",
         yaxis_title="",
         showlegend=False,
-        height=350,
+        height=420,
     )
     st.plotly_chart(fig_box, use_container_width=True)
 
