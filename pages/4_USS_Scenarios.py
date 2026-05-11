@@ -8,11 +8,13 @@ Upside modes when the fund is well-funded:
 
 Investment returns: log-normal equity (Davies, Grant & Shapland 2021) + deterministic bonds.
 Historical CPI/RPI rates drive all indexation calculations.
+
+Soft cap+ proposal: Otsuka (2024)
+  https://mikeotsuka.medium.com/the-conditional-indexation-of-uss-benefits-is-the-most-promising-route-to-their-improvement-538c415b41bf
 """
 import numpy as np
 import streamlit as st
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import pandas as pd
 
 from utils import CPI, RPI
@@ -89,9 +91,9 @@ N_SIMS = 2000
 # Pure functions
 # ---------------------------------------------------------------------------
 def soft_cap_rate(cpi_pct: float) -> float:
-    if cpi_pct <= 5.0:   return cpi_pct
+    if cpi_pct <= 5.0:    return cpi_pct
     elif cpi_pct <= 15.0: return 5.0 + 0.5 * (cpi_pct - 5.0)
-    else:                 return 10.0
+    else:                  return 10.0
 
 def yr_rate(index: dict, year: int) -> float:
     if year - 1 not in index: return 0.0
@@ -121,17 +123,16 @@ lmew   = np.log((1 + eq_m)**2 / np.sqrt(eq_v**2 + (1 + eq_m)**2))
 lsigma = np.sqrt(np.log(1 + eq_v**2 / (1 + eq_m)**2))
 
 rng = np.random.default_rng(42)
-eq_gross   = np.exp(lmew + lsigma * rng.standard_normal((n_steps, N_SIMS)))  # (steps, sims)
-port_gross = eq_sh * eq_gross + (1 - eq_sh) * (1 + b_r)                      # real gross return
+eq_gross   = np.exp(lmew + lsigma * rng.standard_normal((n_steps, N_SIMS)))
+port_gross = eq_sh * eq_gross + (1 - eq_sh) * (1 + b_r)
 
-# Funding ratio paths: FR[t+1] = FR[t] × real_portfolio_return
-# (CPI cancels: nominal asset return / CPI liability growth ≈ real return)
+# Funding ratio paths
 FR = np.empty((n_steps + 1, N_SIMS))
 FR[0] = initial_fr
 FR[1:] = initial_fr * np.cumprod(port_gross, axis=0)
 
 # ---------------------------------------------------------------------------
-# Upside rate — what gets paid when fund is sufficiently funded
+# Upside rate — what gets paid when sufficiently funded
 # Shape: (n_steps, N_SIMS)
 # ---------------------------------------------------------------------------
 if upside_mode == "CPI only":
@@ -139,37 +140,45 @@ if upside_mode == "CPI only":
 elif upside_mode == "RPI":
     upside = np.broadcast_to(rpi_steps[:, None], (n_steps, N_SIMS)).copy()
 else:  # Return sharing
-    real_ret_pct = (port_gross - 1) * 100                          # real portfolio return %
+    real_ret_pct = (port_gross - 1) * 100
     upside = cpi_steps[:, None] + sharing_fraction * np.maximum(0, real_ret_pct)
+
+funded = FR[:-1] >= 100   # boolean mask (n_steps, N_SIMS)
 
 # ---------------------------------------------------------------------------
 # Pension paths
 # ---------------------------------------------------------------------------
 def cum_pension(step_pct: np.ndarray) -> np.ndarray:
-    """step_pct: (n_steps,) or (n_steps, N_SIMS) → (n_steps+1, ...) starting at 1000."""
     p = np.empty((n_steps + 1,) if step_pct.ndim == 1 else (n_steps + 1, N_SIMS))
     p[0] = 1000.0
     p[1:] = 1000.0 * np.cumprod(1 + step_pct / 100, axis=0)
     return p
 
+# No indexation
 pension_no_idx = np.full(n_steps + 1, 1000.0)
-pension_sc     = cum_pension(sc_steps)
 
-# Full CI: 0% when underfunded; upside when funded
-fci_steps = np.where(FR[:-1] >= 100, upside, 0.0)
-pension_fci = cum_pension(fci_steps)
+# Soft cap — deterministic, current USS DB promise
+pension_sc = cum_pension(sc_steps)
+
+# Soft cap+ (Otsuka 2024): soft cap is the guaranteed floor; CI adds upside when funded.
+# Members can never be worse off than current DB. Only upside risk relative to status quo.
+sc_plus_steps = np.where(funded, np.maximum(sc_steps[:, None], upside), sc_steps[:, None])
+pension_scplus = cum_pension(sc_plus_steps)
+
+# Binary CI: 0% when underfunded; full upside when funded. Hard cliff edge.
+bci_steps = np.where(funded, upside, 0.0)
+pension_bci = cum_pension(bci_steps)
 
 # Hybrid CI: guaranteed floor always; remainder of upside conditional on funding
 guaranteed  = np.minimum(cpi_steps[:, None], hybrid_floor)
-conditional = np.where(FR[:-1] >= 100, np.maximum(0.0, upside - guaranteed), 0.0)
+conditional = np.where(funded, np.maximum(0.0, upside - guaranteed), 0.0)
 pension_hci = cum_pension(guaranteed + conditional)
 
 # Graded CI: proportional 0→CPI below 100% FR; proportional CPI→upside above 100% FR.
-# Smooth, no binary trigger. Naturally shares returns when FR is high.
+# No binary trigger — smooth, no cliff edge.
 below = cpi_steps[:, None] * FR[:-1] / 100
 above = cpi_steps[:, None] + (upside - cpi_steps[:, None]) * (FR[:-1] - 100) / 100
-gci_steps = np.where(FR[:-1] < 100, below, above)
-gci_steps = np.maximum(0.0, gci_steps)           # no negative indexation
+gci_steps = np.maximum(0.0, np.where(FR[:-1] < 100, below, above))
 pension_gci = cum_pension(gci_steps)
 
 # Deflation (deterministic historical CPI/RPI)
@@ -184,45 +193,46 @@ PERCS = [5, 25, 50, 75, 95]
 def pcts(arr: np.ndarray) -> dict:
     return {p: np.percentile(arr, p, axis=1) for p in PERCS}
 
-fr_p   = pcts(FR)
-fci_p  = pcts(pension_fci)
-hci_p  = pcts(pension_hci)
-gci_p  = pcts(pension_gci)
+fr_p      = pcts(FR)
+scplus_p  = pcts(pension_scplus)
+bci_p     = pcts(pension_bci)
+hci_p     = pcts(pension_hci)
+gci_p     = pcts(pension_gci)
 
-fci_rp = pcts(pension_fci * cpi_defl[:, None])
-hci_rp = pcts(pension_hci * cpi_defl[:, None])
-gci_rp = pcts(pension_gci * cpi_defl[:, None])
+scplus_rp = pcts(pension_scplus * cpi_defl[:, None])
+bci_rp    = pcts(pension_bci   * cpi_defl[:, None])
+hci_rp    = pcts(pension_hci   * cpi_defl[:, None])
+gci_rp    = pcts(pension_gci   * cpi_defl[:, None])
 
-pct_ci_paid = np.mean(FR[:-1] >= 100, axis=1) * 100  # P(trigger fires) each step
+pct_ci_paid = np.mean(funded, axis=1) * 100
 
 COLOURS = {
-    "Soft cap":  "#636EFA",
-    "Full CI":   "#EF553B",
-    "Hybrid CI": "#00CC96",
-    "Graded CI": "#AB63FA",
+    "Soft cap":   "#636EFA",
+    "Soft cap+":  "#FF6692",
+    "Binary CI":  "#EF553B",
+    "Hybrid CI":  "#00CC96",
+    "Graded CI":  "#AB63FA",
 }
 GREY = "#888888"
-hybrid_label = f"Hybrid CI (≥{hybrid_floor:.1f}% floor)"
+hybrid_label  = f"Hybrid CI (≥{hybrid_floor:.1f}% floor)"
 
 # ---------------------------------------------------------------------------
 # Plot helpers
 # ---------------------------------------------------------------------------
-def add_fan(fig, years, p: dict, colour: str, name: str, row=None, col=None) -> None:
-    kw = dict(row=row, col=col) if row else {}
+def add_fan(fig, years, p: dict, colour: str, name: str) -> None:
     fig.add_trace(go.Scatter(x=years, y=p[95], mode="lines", line=dict(width=0),
-                             showlegend=False, hoverinfo="skip"), **kw)
+                             showlegend=False, hoverinfo="skip"))
     fig.add_trace(go.Scatter(x=years, y=p[5], mode="lines", line=dict(width=0),
                              fill="tonexty", fillcolor=hex_rgba(colour, 0.10),
-                             showlegend=False, hoverinfo="skip"), **kw)
+                             showlegend=False, hoverinfo="skip"))
     fig.add_trace(go.Scatter(x=years, y=p[75], mode="lines", line=dict(width=0),
-                             showlegend=False, hoverinfo="skip"), **kw)
+                             showlegend=False, hoverinfo="skip"))
     fig.add_trace(go.Scatter(x=years, y=p[25], mode="lines", line=dict(width=0),
                              fill="tonexty", fillcolor=hex_rgba(colour, 0.22),
-                             showlegend=False, hoverinfo="skip"), **kw)
+                             showlegend=False, hoverinfo="skip"))
     fig.add_trace(go.Scatter(x=years, y=p[50], mode="lines+markers", name=name,
                              line=dict(color=colour, width=2),
-                             hovertemplate=f"{name}<br>%{{x}}<br>Median: £%{{y:,.0f}}<extra></extra>"),
-                  **kw)
+                             hovertemplate=f"{name}<br>%{{x}}<br>Median: £%{{y:,.0f}}<extra></extra>"))
 
 # ---------------------------------------------------------------------------
 # Tabs
@@ -230,13 +240,13 @@ def add_fan(fig, years, p: dict, colour: str, name: str, row=None, col=None) -> 
 tab_overview, tab_hh = st.tabs(["Overview", "Head-to-head"])
 
 # ============================================================
-# TAB 1: Overview — fan charts
+# TAB 1: Overview
 # ============================================================
 with tab_overview:
+
     # --- Nominal ---
     st.subheader("Nominal monthly pension (£)")
     st.caption("Bands: 5th–95th and 25th–75th percentile across simulated market histories.")
-
     fig_nom = go.Figure()
     fig_nom.add_trace(go.Scatter(
         x=projection_years, y=pension_no_idx, mode="lines", name="No indexation",
@@ -248,9 +258,10 @@ with tab_overview:
         line=dict(color=COLOURS["Soft cap"], width=2),
         hovertemplate="Soft cap<br>%{x}<br>£%{y:,.0f}<extra></extra>",
     ))
-    add_fan(fig_nom, projection_years, fci_p, COLOURS["Full CI"], "Full CI")
-    add_fan(fig_nom, projection_years, hci_p, COLOURS["Hybrid CI"], hybrid_label)
-    add_fan(fig_nom, projection_years, gci_p, COLOURS["Graded CI"], "Graded CI")
+    add_fan(fig_nom, projection_years, scplus_p, COLOURS["Soft cap+"], "Soft cap+")
+    add_fan(fig_nom, projection_years, bci_p,    COLOURS["Binary CI"], "Binary CI")
+    add_fan(fig_nom, projection_years, hci_p,    COLOURS["Hybrid CI"], hybrid_label)
+    add_fan(fig_nom, projection_years, gci_p,    COLOURS["Graded CI"], "Graded CI")
     fig_nom.update_layout(xaxis_title="Year", yaxis_title="Monthly pension (£)",
                           hovermode="x unified", legend_title="Scenario")
     st.plotly_chart(fig_nom, use_container_width=True)
@@ -258,7 +269,7 @@ with tab_overview:
     # --- Funding ratio ---
     st.subheader("Funding ratio over time")
     st.caption(
-        f"Starts at {initial_fr}%. Stochastic: {equity_share}% equities, "
+        f"Starts at {initial_fr}%. {equity_share}% equities, "
         f"mean real return {equity_mean:.1f}%, vol {equity_vol:.1f}%. "
         "CI trigger fires when FR ≥ 100%."
     )
@@ -272,7 +283,7 @@ with tab_overview:
 
     # --- P(CI fires) ---
     st.subheader("P(CI trigger fires) by year")
-    st.caption("Bar: fraction of simulations where FR ≥ 100%. Line: historical CPI rate (right axis).")
+    st.caption("Fraction of simulations with FR ≥ 100% (right axis: historical CPI).")
     fig_prob = go.Figure()
     fig_prob.add_trace(go.Bar(
         x=projection_years[1:], y=pct_ci_paid, marker_color="#FFA15A",
@@ -288,17 +299,17 @@ with tab_overview:
         yaxis=dict(title="P(trigger, %)", range=[0, 100], ticksuffix="%"),
         yaxis2=dict(title="CPI (%)", overlaying="y", side="right",
                     range=[0, max(cpi_steps) * 2.2]),
-        hovermode="x unified",
-        legend=dict(x=0.01, y=0.99),
+        hovermode="x unified", legend=dict(x=0.01, y=0.99),
     )
     st.plotly_chart(fig_prob, use_container_width=True)
 
     # --- Real pension ---
     st.subheader(f"Real monthly pension (£, {start_year} prices)")
     st.caption(
-        f"CPI-deflated purchasing power. £1,000 = full protection. "
-        f"Values **above** £1,000 indicate real enhancement "
-        f"({'possible' if upside_mode != 'CPI only' else 'not possible'} with current upside mode: {upside_mode})."
+        f"CPI-deflated purchasing power. £1,000 = full protection maintained. "
+        f"Values above £1,000 indicate real enhancement "
+        f"({'possible' if upside_mode != 'CPI only' else 'not possible'} with upside mode: {upside_mode}). "
+        "Soft cap+ floor means it can never fall below the Soft cap line."
     )
     fig_real = go.Figure()
     fig_real.add_hline(y=1000, line_dash="dash", line_color="lightgray", line_width=1,
@@ -318,9 +329,10 @@ with tab_overview:
         line=dict(color=COLOURS["Soft cap"], width=2),
         hovertemplate="Soft cap<br>%{x}<br>£%{y:,.0f}<extra></extra>",
     ))
-    add_fan(fig_real, projection_years, fci_rp, COLOURS["Full CI"], "Full CI")
-    add_fan(fig_real, projection_years, hci_rp, COLOURS["Hybrid CI"], hybrid_label)
-    add_fan(fig_real, projection_years, gci_rp, COLOURS["Graded CI"], "Graded CI")
+    add_fan(fig_real, projection_years, scplus_rp, COLOURS["Soft cap+"], "Soft cap+")
+    add_fan(fig_real, projection_years, bci_rp,    COLOURS["Binary CI"], "Binary CI")
+    add_fan(fig_real, projection_years, hci_rp,    COLOURS["Hybrid CI"], hybrid_label)
+    add_fan(fig_real, projection_years, gci_rp,    COLOURS["Graded CI"], "Graded CI")
     fig_real.update_layout(
         xaxis_title="Year",
         yaxis_title=f"Monthly pension (£, {start_year} prices)",
@@ -333,23 +345,21 @@ with tab_overview:
 # ============================================================
 with tab_hh:
     st.markdown(
-        "Compare scenarios directly at the **same percentile** — e.g. how does Full CI compare "
-        "to Graded CI for the unlucky 25%? And see the full outcome distribution at retirement end."
+        "Compare scenarios at the **same percentile** — e.g. at the unlucky p25, "
+        "which CI type performs best? And see the full spread at the final year."
     )
 
-    # ---- Percentile trajectory ----
+    # ---- Percentile trajectories ----
     st.subheader("Real pension trajectories at selected percentile")
-
     pct_options = {
-        "5th — worst 5% of outcomes":      5,
-        "25th — lower quartile":           25,
-        "50th — median":                   50,
-        "75th — upper quartile":           75,
-        "95th — best 5% of outcomes":      95,
+        "5th — worst 5%":        5,
+        "25th — lower quartile": 25,
+        "50th — median":         50,
+        "75th — upper quartile": 75,
+        "95th — best 5%":        95,
     }
     pct_label = st.radio(
-        "Percentile to compare across scenarios:",
-        list(pct_options.keys()), index=2, horizontal=True,
+        "Percentile:", list(pct_options.keys()), index=2, horizontal=True,
         label_visibility="collapsed",
     )
     pct_val = pct_options[pct_label]
@@ -357,8 +367,6 @@ with tab_hh:
     fig_hh = go.Figure()
     fig_hh.add_hline(y=1000, line_dash="dash", line_color="lightgray", line_width=1,
                      annotation_text="Full purchasing power", annotation_position="top left")
-
-    # Deterministic scenarios (same regardless of percentile)
     fig_hh.add_trace(go.Scatter(
         x=projection_years, y=1000 * cpi_defl, mode="lines",
         name="No index (CPI)", line=dict(color=GREY, width=2, dash="solid"),
@@ -374,19 +382,17 @@ with tab_hh:
         name="Soft cap", line=dict(color=COLOURS["Soft cap"], width=2),
         hovertemplate="Soft cap<br>%{x}<br>£%{y:,.0f}<extra></extra>",
     ))
-
-    # Stochastic scenarios at selected percentile
     for label, rp, colour in [
-        ("Full CI",     fci_rp, COLOURS["Full CI"]),
-        (hybrid_label,  hci_rp, COLOURS["Hybrid CI"]),
-        ("Graded CI",   gci_rp, COLOURS["Graded CI"]),
+        ("Soft cap+",  scplus_rp, COLOURS["Soft cap+"]),
+        ("Binary CI",  bci_rp,   COLOURS["Binary CI"]),
+        (hybrid_label, hci_rp,   COLOURS["Hybrid CI"]),
+        ("Graded CI",  gci_rp,   COLOURS["Graded CI"]),
     ]:
         fig_hh.add_trace(go.Scatter(
             x=projection_years, y=rp[pct_val], mode="lines+markers",
             name=label, line=dict(color=colour, width=2),
-            hovertemplate=f"{label} ({pct_label[:3]}th)<br>%{{x}}<br>£%{{y:,.0f}}<extra></extra>",
+            hovertemplate=f"{label}<br>%{{x}}<br>£%{{y:,.0f}}<extra></extra>",
         ))
-
     fig_hh.update_layout(
         title=f"Real pension — {pct_label}",
         xaxis_title="Year",
@@ -396,103 +402,116 @@ with tab_hh:
     st.plotly_chart(fig_hh, use_container_width=True)
 
     # ---- Final year distribution ----
-    st.subheader(f"Final year ({projection_years[-1]}) outcome distribution")
-    st.caption(
-        "Each scenario on its own row. Boxes: 25th–75th percentile; whiskers: 5th–95th. "
-        "Deterministic scenarios (no indexation, soft cap) show as a single line."
-    )
-
+    end_year     = projection_years[-1]
     end_cpi_defl = cpi_defl[-1]
     end_rpi_defl = rpi_defl[-1]
 
+    st.subheader(f"Final year ({end_year}) outcome distribution")
+    st.caption(
+        "Each scenario on its own row. Box: 25th–75th percentile; whiskers: 5th–95th. "
+        "Deterministic scenarios show as a single line."
+    )
+
     def box_trace(name, p5, p25, med, p75, p95, colour):
         return go.Box(
-            name=name,
-            y=[name],          # ← positions each box on its own row
-            orientation="h",
+            name=name, y=[name], orientation="h",
             q1=[p25], median=[med], q3=[p75],
             lowerfence=[p5], upperfence=[p95],
-            marker_color=colour,
-            line_color=colour,
+            marker_color=colour, line_color=colour,
             fillcolor=hex_rgba(colour, 0.3),
             boxpoints=False,
-            hovertemplate=f"{name}<br>p5: £%{{lowerfence:,.0f}}<br>Q1: £%{{q1:,.0f}}<br>"
-                          f"Median: £%{{median:,.0f}}<br>Q3: £%{{q3:,.0f}}<br>"
-                          f"p95: £%{{upperfence:,.0f}}<extra></extra>",
+            hovertemplate=(
+                f"{name}<br>p5: £%{{lowerfence:,.0f}}<br>Q1: £%{{q1:,.0f}}<br>"
+                f"Median: £%{{median:,.0f}}<br>Q3: £%{{q3:,.0f}}<br>"
+                f"p95: £%{{upperfence:,.0f}}<extra></extra>"
+            ),
         )
 
     def det_box(name, val, colour):
-        """Deterministic scenario — box collapses to a single vertical line."""
         return box_trace(name, val, val, val, val, val, colour)
 
     fig_box = go.Figure([
-        # Bottom to top = first to last in list (Plotly reverses y order for Box)
         box_trace("Graded CI",
                   gci_rp[5][-1], gci_rp[25][-1], gci_rp[50][-1],
                   gci_rp[75][-1], gci_rp[95][-1], COLOURS["Graded CI"]),
         box_trace(hybrid_label,
                   hci_rp[5][-1], hci_rp[25][-1], hci_rp[50][-1],
                   hci_rp[75][-1], hci_rp[95][-1], COLOURS["Hybrid CI"]),
-        box_trace("Full CI",
-                  fci_rp[5][-1], fci_rp[25][-1], fci_rp[50][-1],
-                  fci_rp[75][-1], fci_rp[95][-1], COLOURS["Full CI"]),
+        box_trace("Binary CI",
+                  bci_rp[5][-1], bci_rp[25][-1], bci_rp[50][-1],
+                  bci_rp[75][-1], bci_rp[95][-1], COLOURS["Binary CI"]),
+        box_trace("Soft cap+",
+                  scplus_rp[5][-1], scplus_rp[25][-1], scplus_rp[50][-1],
+                  scplus_rp[75][-1], scplus_rp[95][-1], COLOURS["Soft cap+"]),
         det_box("Soft cap",       pension_sc[-1] * end_cpi_defl, COLOURS["Soft cap"]),
         det_box("No index (RPI)", 1000 * end_rpi_defl,           GREY),
         det_box("No index (CPI)", 1000 * end_cpi_defl,           GREY),
     ])
-
     fig_box.add_vline(x=1000, line_dash="dash", line_color="lightgray", line_width=1,
-                      annotation_text="£1,000 (full purchasing power)",
-                      annotation_position="top right")
+                      annotation_text="£1,000", annotation_position="top right")
     fig_box.update_layout(
         xaxis_title=f"Monthly pension (£, {start_year} prices)",
-        yaxis_title="",
-        showlegend=False,
-        height=420,
+        yaxis_title="", showlegend=False, height=460,
     )
     st.plotly_chart(fig_box, use_container_width=True)
 
-    # ---- Quartile summary table ----
+    # ---- Quartile summary ----
     st.subheader("Quartile summary")
-    end_year = projection_years[-1]
-    rows = []
-    for label, rp in [
-        ("No index (CPI)",  {p: 1000 * end_cpi_defl for p in PERCS}),
-        ("No index (RPI)",  {p: 1000 * end_rpi_defl for p in PERCS}),
+    rows = [
+        ("No index (CPI)",  {p: 1000 * end_cpi_defl      for p in PERCS}),
+        ("No index (RPI)",  {p: 1000 * end_rpi_defl      for p in PERCS}),
         ("Soft cap",        {p: pension_sc[-1] * end_cpi_defl for p in PERCS}),
-        ("Full CI",         {p: fci_rp[p][-1] for p in PERCS}),
-        (hybrid_label,      {p: hci_rp[p][-1] for p in PERCS}),
-        ("Graded CI",       {p: gci_rp[p][-1] for p in PERCS}),
-    ]:
-        rows.append({
-            "Scenario": label,
-            "5th %ile": f"£{rp[5]:,.0f}",
-            "25th %ile": f"£{rp[25]:,.0f}",
-            "Median": f"£{rp[50]:,.0f}",
-            "75th %ile": f"£{rp[75]:,.0f}",
-            "95th %ile": f"£{rp[95]:,.0f}",
-        })
-    st.dataframe(pd.DataFrame(rows).set_index("Scenario"), use_container_width=True)
+        ("Soft cap+",       {p: scplus_rp[p][-1]          for p in PERCS}),
+        ("Binary CI",       {p: bci_rp[p][-1]             for p in PERCS}),
+        (hybrid_label,      {p: hci_rp[p][-1]             for p in PERCS}),
+        ("Graded CI",       {p: gci_rp[p][-1]             for p in PERCS}),
+    ]
+    st.dataframe(
+        pd.DataFrame([
+            {"Scenario": label,
+             "5th %ile": f"£{q[5]:,.0f}", "25th %ile": f"£{q[25]:,.0f}",
+             "Median": f"£{q[50]:,.0f}",  "75th %ile": f"£{q[75]:,.0f}",
+             "95th %ile": f"£{q[95]:,.0f}"}
+            for label, q in rows
+        ]).set_index("Scenario"),
+        use_container_width=True,
+    )
 
 # ---------------------------------------------------------------------------
-# Expanders (outside tabs)
+# Expander: model notes
 # ---------------------------------------------------------------------------
-with st.expander("Model notes"):
+with st.expander("Model notes & citations"):
     st.markdown(f"""
-**Soft cap rule**: full CPI ≤ 5%; 5% + 50%×(CPI−5%) for CPI 5–15%; maximum 10%.
+**Soft cap rule** (current USS DB): full CPI ≤ 5%; 5% + 50%×(CPI−5%) for CPI 5–15%; maximum 10%.
 
-**Upside mode: {upside_mode}**
-{"CPI only — real value maintained at £1,000 when funded, no enhancement." if upside_mode == "CPI only" else
- "RPI — slight real uplift when funded, as RPI historically runs ~0.5–1 pp above CPI." if upside_mode == "RPI" else
- f"Return sharing ({sharing_fraction*100:.0f}%) — when funded, pensioner receives CPI + {sharing_fraction*100:.0f}% of the fund's real return. In a year with 5% real portfolio return and 3% CPI, indexation = 3% + {sharing_fraction*100:.0f}%×5% = {3 + sharing_fraction*5:.1f}%. The floor is 0% — poor returns suppress CI but don't cut the pension."}
+**Soft cap+** — proposed by Michael Otsuka (2024).
+The soft cap remains a **guaranteed floor**: indexation can never fall below the current DB soft cap.
+When the fund is sufficiently funded, CI adds upside above the soft cap, up to full CPI (or the
+selected upside rate). Members face no downside risk relative to current DB provision — only
+the prospect of gains.
+> Otsuka, M. (2024). *The conditional indexation of USS benefits is the most promising route to
+> their improvement.* Medium / USSBriefs.
+> [Link](https://mikeotsuka.medium.com/the-conditional-indexation-of-uss-benefits-is-the-most-promising-route-to-their-improvement-538c415b41bf)
 
-**Graded CI** scales linearly from 0% (FR=0%) through CPI (FR=100%) to the upside rate (FR=200%).
-No binary trigger — the CI payment grows smoothly with funding health and naturally shares
-upside returns without a separate threshold.
+**Binary CI**: pays full upside when funded (FR ≥ 100%); 0% when underfunded. Hard cliff edge.
 
-**Funding ratio** evolves in real terms: FR_{{t+1}} = FR_t × real portfolio return_t.
-CPI cancels between nominal asset returns and CPI liability growth.
-All {N_SIMS:,} Monte Carlo paths use seed 42.
+**Hybrid CI**: always pays the guaranteed floor ({hybrid_floor:.1f}%); pays upside (up to selected rate)
+when funded. Floor is an arbitrary fixed value rather than the principled soft cap guarantee.
 
-**Parameters** from Davies, Grant & Shapland (2021), [arXiv:2403.08811](https://arxiv.org/abs/2403.08811).
+**Graded CI**: proportional — 0% at FR=0%, CPI at FR=100%, upside at FR=200%. No binary trigger.
+
+**Upside mode: {upside_mode}**{"" if upside_mode == "CPI only" else
+" — RPI typically ~0.5–1 pp above CPI historically." if upside_mode == "RPI" else
+f" — CPI + {sharing_fraction*100:.0f}% of fund's real return. Floor: 0% (no pension cuts)."}
+
+**Funding ratio** evolves as FR_{{t+1}} = FR_t × real portfolio return_t (CPI cancels).
+Equity returns are log-normal; parameters from Davies, Grant & Shapland (2021).
+> Davies, N.M., Grant, J., & Shapland, C.Y. (2021). *The USS Trustees' risky strategy.*
+> [arXiv:2403.08811](https://arxiv.org/abs/2403.08811) / USSBriefs.
+
+USS CI interim modelling report (May 2025):
+> USS (2025). *Conditional Indexation — interim report.*
+> [uss.co.uk](https://www.uss.co.uk/-/media/project/ussmainsite/files/news-and-views/briefings-and-analysis/interim-conditional-indexation-report-2025.pdf)
+
+{N_SIMS:,} Monte Carlo paths, seed = 42.
 """)
