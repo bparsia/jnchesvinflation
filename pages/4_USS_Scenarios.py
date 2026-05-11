@@ -408,6 +408,7 @@ with tab_hh:
     def box_trace(name, p5, p25, med, p75, p95, colour):
         return go.Box(
             name=name,
+            y=[name],          # ← positions each box on its own row
             orientation="h",
             q1=[p25], median=[med], q3=[p75],
             lowerfence=[p5], upperfence=[p95],
