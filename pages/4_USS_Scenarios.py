@@ -454,96 +454,98 @@ with tab_hh:
     )
     st.plotly_chart(fig_hh, use_container_width=True)
 
-    # ---- Final year distribution ----
-    end_year     = projection_years[-1]
-    end_cpi_defl = cpi_defl[-1]
-    end_rpi_defl = rpi_defl[-1]
+# ---------------------------------------------------------------------------
+# Final year outcome distribution — top-level so anchor links work
+# ---------------------------------------------------------------------------
+end_year     = projection_years[-1]
+end_cpi_defl = cpi_defl[-1]
+end_rpi_defl = rpi_defl[-1]
 
-    st.subheader(f"Final year ({end_year}) outcome distribution")
-    
-    bjp("""The first thing to notice is that (if you start in 2009) *all* the deterministic outcomes: No indexation against CPI or RPI or the current "soft cap" (up to 10% of CPI) show loss against historical inflation but that the soft cap *really* mitigates. Without any indexation you lose nearly half your purchacing power. With the soft cap you retain ≈97%. *That's not bad!*
+st.subheader(f"Final year ({end_year}) outcome distribution")
 
-    The soft-cap+ option (current soft-cap + CI on returns above inflation) *strictly domainates* the soft cap, as one might expect. It cannot do worse and half the scenarios result in real purchasing power of over twice your initial £1000. I.e., the median sceanrio is £2000 and the high is £4000.
+bjp("""The first thing to notice is that (if you start in 2009) *all* the deterministic outcomes: No indexation against CPI or RPI or the current "soft cap" (up to 10% of CPI) show loss against historical inflation but that the soft cap *really* mitigates. Without any indexation you lose nearly half your purchacing power. With the soft cap you retain ≈97%. *That's not bad!*
 
-    Note that this *only* analyses CI. Indexation is not the only way your benefits could improve. We could augment benefits directly via negotiation. However, when we negotiation benefit increases, *many* uses of that money are on the table including contribution reductions.
+The soft-cap+ option (current soft-cap + CI on returns above inflation) *strictly domainates* the soft cap, as one might expect. It cannot do worse and half the scenarios result in real purchasing power of over twice your initial £1000. I.e., the median sceanrio is £2000 and the high is £4000.
 
-    The worst for members scheme is "binary CI" wherein basically we look for a funding ratio trigger and either give 0% indexation or full indexation. The downside is essentially no indexation and that's a possible scenario. If we are unlucky, we'd do worse than the soft cap. But we do *better* than the soft cap in ≈78% of the simulations.
+Note that this *only* analyses CI. Indexation is not the only way your benefits could improve. We could augment benefits directly via negotiation. However, when we negotiation benefit increases, *many* uses of that money are on the table including contribution reductions.
 
-    The other two forms of CI try to hedge against the extreme downside risk and push the worst case scenario (in our simulations) to pretty close to the soft cap. That gives us some negotiating wiggle room. Soft cap+ is a pure win for us, but offers less to the employers. Hybrid CI, which trades a *lot* of the cap away, is about £100 per £1000 worse in extremis but has similar upsides.
+The worst for members scheme is "binary CI" wherein basically we look for a funding ratio trigger and either give 0% indexation or full indexation. The downside is essentially no indexation and that's a possible scenario. If we are unlucky, we'd do worse than the soft cap. But we do *better* than the soft cap in ≈78% of the simulations.
 
-    Now members might be extremely risk sensitive so it's soft-cap+ or bust. (And we need to validate the simulations and quantify the uncertainty introduced there.) But if we assume the simulations are pretty good, then we can discuss our risk/reward profile.
+The other two forms of CI try to hedge against the extreme downside risk and push the worst case scenario (in our simulations) to pretty close to the soft cap. That gives us some negotiating wiggle room. Soft cap+ is a pure win for us, but offers less to the employers. Hybrid CI, which trades a *lot* of the cap away, is about £100 per £1000 worse in extremis but has similar upsides.
 
-    Please note that while  this has an *element* of defined contribution (DC) (we, the members, take on some risk) there are a lot of differences with DC. In particularly, unlike a stocks and shares ISA, members are less screwed by market timing. E.g., you never dip into your capital here. You have some insulation from market fluctuations and unwise decision making. OTOH, the fact that you can't lose your retirement fund on a risky investment means you can't double your retirment fund on a risky investment.
-    """)
-    st.caption(
-        "Each scenario on its own row. Box: 25th–75th percentile; whiskers: 5th–95th. "
-        "Deterministic scenarios show as a single line."
+Now members might be extremely risk sensitive so it's soft-cap+ or bust. (And we need to validate the simulations and quantify the uncertainty introduced there.) But if we assume the simulations are pretty good, then we can discuss our risk/reward profile.
+
+Please note that while  this has an *element* of defined contribution (DC) (we, the members, take on some risk) there are a lot of differences with DC. In particularly, unlike a stocks and shares ISA, members are less screwed by market timing. E.g., you never dip into your capital here. You have some insulation from market fluctuations and unwise decision making. OTOH, the fact that you can't lose your retirement fund on a risky investment means you can't double your retirment fund on a risky investment.
+""")
+st.caption(
+    "Each scenario on its own row. Box: 25th–75th percentile; whiskers: 5th–95th. "
+    "Deterministic scenarios show as a single line."
+)
+
+def box_trace(name, p5, p25, med, p75, p95, colour):
+    return go.Box(
+        name=name, y=[name], orientation="h",
+        q1=[p25], median=[med], q3=[p75],
+        lowerfence=[p5], upperfence=[p95],
+        marker_color=colour, line_color=colour,
+        fillcolor=hex_rgba(colour, 0.3),
+        boxpoints=False,
+        hovertemplate=(
+            f"{name}<br>p5: £%{{lowerfence:,.0f}}<br>Q1: £%{{q1:,.0f}}<br>"
+            f"Median: £%{{median:,.0f}}<br>Q3: £%{{q3:,.0f}}<br>"
+            f"p95: £%{{upperfence:,.0f}}<extra></extra>"
+        ),
     )
 
-    def box_trace(name, p5, p25, med, p75, p95, colour):
-        return go.Box(
-            name=name, y=[name], orientation="h",
-            q1=[p25], median=[med], q3=[p75],
-            lowerfence=[p5], upperfence=[p95],
-            marker_color=colour, line_color=colour,
-            fillcolor=hex_rgba(colour, 0.3),
-            boxpoints=False,
-            hovertemplate=(
-                f"{name}<br>p5: £%{{lowerfence:,.0f}}<br>Q1: £%{{q1:,.0f}}<br>"
-                f"Median: £%{{median:,.0f}}<br>Q3: £%{{q3:,.0f}}<br>"
-                f"p95: £%{{upperfence:,.0f}}<extra></extra>"
-            ),
-        )
+def det_box(name, val, colour):
+    return box_trace(name, val, val, val, val, val, colour)
 
-    def det_box(name, val, colour):
-        return box_trace(name, val, val, val, val, val, colour)
+fig_box = go.Figure([
+    box_trace("Graded CI",
+              gci_rp[5][-1], gci_rp[25][-1], gci_rp[50][-1],
+              gci_rp[75][-1], gci_rp[95][-1], COLOURS["Graded CI"]),
+    box_trace(hybrid_label,
+              hci_rp[5][-1], hci_rp[25][-1], hci_rp[50][-1],
+              hci_rp[75][-1], hci_rp[95][-1], COLOURS["Hybrid CI"]),
+    box_trace("Binary CI",
+              bci_rp[5][-1], bci_rp[25][-1], bci_rp[50][-1],
+              bci_rp[75][-1], bci_rp[95][-1], COLOURS["Binary CI"]),
+    box_trace("Soft cap+",
+              scplus_rp[5][-1], scplus_rp[25][-1], scplus_rp[50][-1],
+              scplus_rp[75][-1], scplus_rp[95][-1], COLOURS["Soft cap+"]),
+    det_box("Soft cap",       pension_sc[-1] * end_cpi_defl, COLOURS["Soft cap"]),
+    det_box("No index (RPI)", 1000 * end_rpi_defl,           GREY),
+    det_box("No index (CPI)", 1000 * end_cpi_defl,           GREY),
+])
+fig_box.add_vline(x=1000, line_dash="dash", line_color="lightgray", line_width=1,
+                  annotation_text="£1,000", annotation_position="top right")
+fig_box.update_layout(
+    xaxis_title=f"Monthly pension (£, {start_year} prices)",
+    yaxis_title="", showlegend=False, height=460,
+)
+st.plotly_chart(fig_box, use_container_width=True)
 
-    fig_box = go.Figure([
-        box_trace("Graded CI",
-                  gci_rp[5][-1], gci_rp[25][-1], gci_rp[50][-1],
-                  gci_rp[75][-1], gci_rp[95][-1], COLOURS["Graded CI"]),
-        box_trace(hybrid_label,
-                  hci_rp[5][-1], hci_rp[25][-1], hci_rp[50][-1],
-                  hci_rp[75][-1], hci_rp[95][-1], COLOURS["Hybrid CI"]),
-        box_trace("Binary CI",
-                  bci_rp[5][-1], bci_rp[25][-1], bci_rp[50][-1],
-                  bci_rp[75][-1], bci_rp[95][-1], COLOURS["Binary CI"]),
-        box_trace("Soft cap+",
-                  scplus_rp[5][-1], scplus_rp[25][-1], scplus_rp[50][-1],
-                  scplus_rp[75][-1], scplus_rp[95][-1], COLOURS["Soft cap+"]),
-        det_box("Soft cap",       pension_sc[-1] * end_cpi_defl, COLOURS["Soft cap"]),
-        det_box("No index (RPI)", 1000 * end_rpi_defl,           GREY),
-        det_box("No index (CPI)", 1000 * end_cpi_defl,           GREY),
-    ])
-    fig_box.add_vline(x=1000, line_dash="dash", line_color="lightgray", line_width=1,
-                      annotation_text="£1,000", annotation_position="top right")
-    fig_box.update_layout(
-        xaxis_title=f"Monthly pension (£, {start_year} prices)",
-        yaxis_title="", showlegend=False, height=460,
-    )
-    st.plotly_chart(fig_box, use_container_width=True)
-
-    # ---- Quartile summary ----
-    st.subheader("Quartile summary")
-    rows = [
-        ("No index (CPI)",  {p: 1000 * end_cpi_defl      for p in PERCS}),
-        ("No index (RPI)",  {p: 1000 * end_rpi_defl      for p in PERCS}),
-        ("Soft cap",        {p: pension_sc[-1] * end_cpi_defl for p in PERCS}),
-        ("Soft cap+",       {p: scplus_rp[p][-1]          for p in PERCS}),
-        ("Binary CI",       {p: bci_rp[p][-1]             for p in PERCS}),
-        (hybrid_label,      {p: hci_rp[p][-1]             for p in PERCS}),
-        ("Graded CI",       {p: gci_rp[p][-1]             for p in PERCS}),
-    ]
-    st.dataframe(
-        pd.DataFrame([
-            {"Scenario": label,
-             "5th %ile": f"£{q[5]:,.0f}", "25th %ile": f"£{q[25]:,.0f}",
-             "Median": f"£{q[50]:,.0f}",  "75th %ile": f"£{q[75]:,.0f}",
-             "95th %ile": f"£{q[95]:,.0f}"}
-            for label, q in rows
-        ]).set_index("Scenario"),
-        use_container_width=True,
-    )
+# ---- Quartile summary ----
+st.subheader("Quartile summary")
+rows = [
+    ("No index (CPI)",  {p: 1000 * end_cpi_defl          for p in PERCS}),
+    ("No index (RPI)",  {p: 1000 * end_rpi_defl          for p in PERCS}),
+    ("Soft cap",        {p: pension_sc[-1] * end_cpi_defl for p in PERCS}),
+    ("Soft cap+",       {p: scplus_rp[p][-1]              for p in PERCS}),
+    ("Binary CI",       {p: bci_rp[p][-1]                 for p in PERCS}),
+    (hybrid_label,      {p: hci_rp[p][-1]                 for p in PERCS}),
+    ("Graded CI",       {p: gci_rp[p][-1]                 for p in PERCS}),
+]
+st.dataframe(
+    pd.DataFrame([
+        {"Scenario": label,
+         "5th %ile": f"£{q[5]:,.0f}", "25th %ile": f"£{q[25]:,.0f}",
+         "Median": f"£{q[50]:,.0f}",  "75th %ile": f"£{q[75]:,.0f}",
+         "95th %ile": f"£{q[95]:,.0f}"}
+        for label, q in rows
+    ]).set_index("Scenario"),
+    use_container_width=True,
+)
 
 # ---------------------------------------------------------------------------
 # Expander: model notes
