@@ -18,8 +18,61 @@ import plotly.graph_objects as go
 import pandas as pd
 
 from utils import CPI, RPI
+import re
+
+st.markdown("""
+<style>
+.bjp-note {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-style: italic;
+    background-color: #fdf8f0;
+    border-left: 4px solid #c9953a;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0 1rem 0;
+    border-radius: 0 6px 6px 0;
+    color: #3d2e10;
+    line-height: 1.75;
+}
+.bjp-note h3 {
+    font-style: italic;
+    font-weight: bold;
+    font-size: 1.15em;
+    margin: 0 0 0.5em 0;
+    color: #6b4c10;
+}
+.bjp-note a { color: #8b6914; }
+.bjp-note p { margin: 0.5em 0; }
+</style>
+""", unsafe_allow_html=True)
+
+
+def bjp(text: str) -> None:
+    """Render user editorial text in a distinctive italic serif callout block."""
+    t = text.strip()
+    t = re.sub(r'^#{1,3} (.+)$', r'<h3>\1</h3>', t, flags=re.MULTILINE)
+    t = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', t)
+    t = re.sub(r'\*(.+?)\*', r'<em>\1</em>', t)
+    t = re.sub(r'\[(.+?)\]\((.+?)\)', r'<a href="\2">\1</a>', t)
+    paras = re.split(r'\n\s*\n', t)
+    html = "".join(
+        p.strip() if p.strip().startswith("<h") else f"<p>{p.strip()}</p>"
+        for p in paras if p.strip()
+    )
+    st.markdown(f'<div class="bjp-note">{html}</div>', unsafe_allow_html=True)
+
 
 st.title("USS Pension: Indexation Scenarios")
+
+bjp("""# WARNING WARNING
+This is an experiment with some *very preliminary*, *totally unvetted* modeling. It is not predictive or retrodictive. It is not a financial planning tool. It is intended for education and for expert consideration in negotiations.
+
+"All models are false; some are useful." This, while true, does not mean useful models are useful to everyone.
+
+Probably the most useful aspect is to help get you used to thinking about the riks involved in various indexation schemes and to start thinking about conditional indexation as a *family* of things, not a single thing.
+
+Probably the best place to start is with the [final year outcome head to head](https://jnchesvinflation.streamlit.app/USS_Scenarios#final-year-2025-outcome-distribution) plot. It's the best way to start thinking about different schemes with uncertainty around investment returns.
+""")
+
 st.markdown(
     "Model what happens to a **£1,000/month pension in payment** under different indexation rules, "
     "using actual historical CPI/RPI and stochastic investment returns. "
@@ -407,6 +460,21 @@ with tab_hh:
     end_rpi_defl = rpi_defl[-1]
 
     st.subheader(f"Final year ({end_year}) outcome distribution")
+    
+    bjp("""The first thing to notice is that (if you start in 2009) *all* the deterministic outcomes: No indexation against CPI or RPI or the current "soft cap" (up to 10% of CPI) show loss against historical inflation but that the soft cap *really* mitigates. Without any indexation you lose nearly half your purchacing power. With the soft cap you retain ≈97%. *That's not bad!*
+
+    The soft-cap+ option (current soft-cap + CI on returns above inflation) *strictly domainates* the soft cap, as one might expect. It cannot do worse and half the scenarios result in real purchasing power of over twice your initial £1000. I.e., the median sceanrio is £2000 and the high is £4000.
+
+    Note that this *only* analyses CI. Indexation is not the only way your benefits could improve. We could augment benefits directly via negotiation. However, when we negotiation benefit increases, *many* uses of that money are on the table including contribution reductions.
+
+    The worst for members scheme is "binary CI" wherein basically we look for a funding ratio trigger and either give 0% indexation or full indexation. The downside is essentially no indexation and that's a possible scenario. If we are unlucky, we'd do worse than the soft cap. But we do *better* than the soft cap in ≈78% of the simulations.
+
+    The other two forms of CI try to hedge against the extreme downside risk and push the worst case scenario (in our simulations) to pretty close to the soft cap. That gives us some negotiating wiggle room. Soft cap+ is a pure win for us, but offers less to the employers. Hybrid CI, which trades a *lot* of the cap away, is about £100 per £1000 worse in extremis but has similar upsides.
+
+    Now members might be extremely risk sensitive so it's soft-cap+ or bust. (And we need to validate the simulations and quantify the uncertainty introduced there.) But if we assume the simulations are pretty good, then we can discuss our risk/reward profile.
+
+    Please note that while  this has an *element* of defined contribution (DC) (we, the members, take on some risk) there are a lot of differences with DC. In particularly, unlike a stocks and shares ISA, members are less screwed by market timing. E.g., you never dip into your capital here. You have some insulation from market fluctuations and unwise decision making. OTOH, the fact that you can't lose your retirement fund on a risky investment means you can't double your retirment fund on a risky investment.
+    """)
     st.caption(
         "Each scenario on its own row. Box: 25th–75th percentile; whiskers: 5th–95th. "
         "Deterministic scenarios show as a single line."
