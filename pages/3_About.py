@@ -1,4 +1,5 @@
 import streamlit as st
+from branding.branding import BLURB
 
 st.title("About")
 
@@ -61,5 +62,6 @@ Derived rows are flagged as `source = derived` in the raw data download.
 
 ---
 
-*Built with [Streamlit](https://streamlit.io) · Data: [UCEA](https://www.ucea.ac.uk)*
+*Data: [UCEA](https://www.ucea.ac.uk)*
 """)
+st.markdown(BLURB)
