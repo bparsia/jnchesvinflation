@@ -1,5 +1,8 @@
 import streamlit as st
 from branding.branding import BLURB
+from styles import inject_bjp_css, bjp
+
+inject_bjp_css()
 
 st.title("About")
 
