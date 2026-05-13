@@ -17,7 +17,7 @@ import streamlit as st
 import plotly.graph_objects as go
 import pandas as pd
 
-from utils import CPI, RPI
+from utils import CPI, RPI, ROOT
 import re
 
 st.markdown("""
@@ -234,6 +234,39 @@ above = cpi_steps[:, None] + (upside - cpi_steps[:, None]) * (FR[:-1] - 100) / 1
 gci_steps = np.maximum(0.0, np.where(FR[:-1] < 100, below, above))
 pension_gci = cum_pension(gci_steps)
 
+# ---------------------------------------------------------------------------
+# Historical USS funding ratio path
+# ---------------------------------------------------------------------------
+_hist_fr_csv = ROOT / "data" / "uss_historical_fr.csv"
+_show_historical = _hist_fr_csv.exists() and projection_years[0] <= 2025
+
+if _show_historical:
+    _hf = pd.read_csv(_hist_fr_csv)
+    hist_FR_arr = np.interp(
+        projection_years,
+        _hf["year"].values,
+        _hf["funding_ratio_pct"].values,
+    )
+    hist_funded_1d   = hist_FR_arr[:-1] >= 100
+    hist_upside_1d   = cpi_steps  # historical upside uses CPI; no observed portfolio returns yet
+
+    hist_scplus_steps = np.where(hist_funded_1d, np.maximum(sc_steps, hist_upside_1d), sc_steps)
+    hist_scplus       = cum_pension(hist_scplus_steps)
+
+    hist_bci_steps = np.where(hist_funded_1d, hist_upside_1d, 0.0)
+    hist_bci       = cum_pension(hist_bci_steps)
+
+    hist_guar_1d   = np.minimum(cpi_steps, hybrid_floor)
+    hist_cond_1d   = np.where(hist_funded_1d, np.maximum(0.0, hist_upside_1d - hist_guar_1d), 0.0)
+    hist_hci       = cum_pension(hist_guar_1d + hist_cond_1d)
+
+    _hist_below     = cpi_steps * hist_FR_arr[:-1] / 100
+    _hist_above     = cpi_steps + (hist_upside_1d - cpi_steps) * (hist_FR_arr[:-1] - 100) / 100
+    hist_gci_steps  = np.maximum(0.0, np.where(hist_FR_arr[:-1] < 100, _hist_below, _hist_above))
+    hist_gci        = cum_pension(hist_gci_steps)
+
+HIST_STYLE = dict(width=2, dash="dot")
+
 # Deflation (deterministic historical CPI/RPI)
 cpi_defl = np.array([CPI[start_year] / CPI[y] for y in projection_years])
 rpi_defl = np.array([RPI[start_year] / RPI[y] for y in projection_years])
@@ -330,8 +363,15 @@ with tab_overview:
     fig_fr.add_hline(y=100, line_dash="dash", line_color="lightgray", line_width=1,
                      annotation_text="100% trigger", annotation_position="top left")
     add_fan(fig_fr, projection_years, fr_p, "#FFA15A", "Funding ratio")
+    if _show_historical:
+        fig_fr.add_trace(go.Scatter(
+            x=projection_years, y=hist_FR_arr, mode="lines+markers",
+            name="Historical FR (est.)",
+            line=dict(color="#222222", **HIST_STYLE),
+            hovertemplate="Historical FR (est.)<br>%{x}<br>%{y:.0f}%<extra></extra>",
+        ))
     fig_fr.update_layout(xaxis_title="Year", yaxis_title="Funding ratio (%)",
-                         showlegend=False, yaxis=dict(ticksuffix="%"))
+                         showlegend=_show_historical, yaxis=dict(ticksuffix="%"))
     st.plotly_chart(fig_fr, use_container_width=True)
 
     # --- P(CI fires) ---
@@ -386,6 +426,18 @@ with tab_overview:
     add_fan(fig_real, projection_years, bci_rp,    COLOURS["Binary CI"], "Binary CI")
     add_fan(fig_real, projection_years, hci_rp,    COLOURS["Hybrid CI"], hybrid_label)
     add_fan(fig_real, projection_years, gci_rp,    COLOURS["Graded CI"], "Graded CI")
+    if _show_historical:
+        for hist_arr, label, col in [
+            (hist_scplus, "Soft cap+ (hist. FR, CPI upside)", COLOURS["Soft cap+"]),
+            (hist_bci,    "Binary CI (hist. FR, CPI upside)",  COLOURS["Binary CI"]),
+            (hist_hci,    f"Hybrid CI (hist. FR, CPI upside)", COLOURS["Hybrid CI"]),
+            (hist_gci,    "Graded CI (hist. FR, CPI upside)",  COLOURS["Graded CI"]),
+        ]:
+            fig_real.add_trace(go.Scatter(
+                x=projection_years, y=hist_arr * cpi_defl, mode="lines",
+                name=label, line=dict(color=col, **HIST_STYLE),
+                hovertemplate=f"{label}<br>%{{x}}<br>£%{{y:,.0f}}<extra></extra>",
+            ))
     fig_real.update_layout(
         xaxis_title="Year",
         yaxis_title=f"Monthly pension (£, {start_year} prices)",
@@ -446,6 +498,18 @@ with tab_hh:
             name=label, line=dict(color=colour, width=2),
             hovertemplate=f"{label}<br>%{{x}}<br>£%{{y:,.0f}}<extra></extra>",
         ))
+    if _show_historical:
+        for hist_arr, label, col in [
+            (hist_scplus, "Soft cap+ (hist. FR)", COLOURS["Soft cap+"]),
+            (hist_bci,    "Binary CI (hist. FR)",  COLOURS["Binary CI"]),
+            (hist_hci,    "Hybrid CI (hist. FR)",  COLOURS["Hybrid CI"]),
+            (hist_gci,    "Graded CI (hist. FR)",  COLOURS["Graded CI"]),
+        ]:
+            fig_hh.add_trace(go.Scatter(
+                x=projection_years, y=hist_arr * cpi_defl, mode="lines",
+                name=label, line=dict(color=col, **HIST_STYLE),
+                hovertemplate=f"{label}<br>%{{x}}<br>£%{{y:,.0f}}<extra></extra>",
+            ))
     fig_hh.update_layout(
         title=f"Real pension — {pct_label}",
         xaxis_title="Year",
@@ -517,6 +581,21 @@ fig_box = go.Figure([
     det_box("No index (RPI)", 1000 * end_rpi_defl,           GREY),
     det_box("No index (CPI)", 1000 * end_cpi_defl,           GREY),
 ])
+if _show_historical:
+    for scheme_name, hist_val in [
+        ("Soft cap+",  hist_scplus[-1] * end_cpi_defl),
+        ("Binary CI",  hist_bci[-1]   * end_cpi_defl),
+        (hybrid_label, hist_hci[-1]   * end_cpi_defl),
+        ("Graded CI",  hist_gci[-1]   * end_cpi_defl),
+    ]:
+        fig_box.add_trace(go.Scatter(
+            x=[hist_val], y=[scheme_name], mode="markers",
+            marker=dict(symbol="diamond", size=11, color="#111111",
+                        line=dict(color="white", width=1)),
+            name="Historical FR (est.)" if scheme_name == "Soft cap+" else None,
+            showlegend=(scheme_name == "Soft cap+"),
+            hovertemplate=f"{scheme_name} — historical (est.): £{hist_val:,.0f}<extra></extra>",
+        ))
 fig_box.add_vline(x=1000, line_dash="dash", line_color="lightgray", line_width=1,
                   annotation_text="£1,000", annotation_position="top right")
 fig_box.update_layout(
@@ -546,6 +625,88 @@ st.dataframe(
     ]).set_index("Scenario"),
     use_container_width=True,
 )
+
+# ---------------------------------------------------------------------------
+# Expander: how the simulations work
+# ---------------------------------------------------------------------------
+with st.expander("How the simulations work"):
+    st.markdown(f"""
+**Yes, basically random — but random in a structured way.**
+
+Each of the {N_SIMS:,} simulations is an independent draw of a plausible economic history.
+Every year, equity returns are drawn at random from a log-normal distribution calibrated
+to long-run UK equity data. Bond returns are held constant. This produces {N_SIMS:,} different
+funding ratio trajectories, and therefore {N_SIMS:,} different pension outcomes for each
+indexation scheme.
+
+### Step-by-step
+
+1. **Draw equity returns.** Each year's real equity return is drawn independently from a
+   log-normal distribution with arithmetic mean **{equity_mean:.1f}%** and standard deviation
+   **{equity_vol:.1f}%** (parameters from Davies, Grant & Shapland 2021, calibrated to
+   post-war UK equity data).
+
+2. **Combine with bonds.** The portfolio return is:
+   `{equity_share}% × equity return + {100 - equity_share}% × {bond_return:.1f}% bond return`.
+
+3. **Evolve the funding ratio.** `FR(t+1) = FR(t) × real portfolio return(t)`.
+   Note: CPI cancels — a real return above 1.0 means the fund grows faster than inflation
+   and the FR improves; below 1.0 and it deteriorates. The FR can swing well above or
+   below 100% from one year to the next in bad equity years.
+
+4. **Apply the CI rule.** For each year and each simulation, check whether FR ≥ 100%.
+   Apply the relevant rule (Soft cap+, Binary, Hybrid, Graded) to determine that year's
+   indexation rate. The simulated pension value compounds these rates from retirement.
+
+5. **Deflate to real terms.** Divide by actual historical CPI to express purchasing power
+   in {start_year} prices.
+
+### What the bands show
+
+The shaded bands on the fan charts are the **5th–95th** (outer) and **25th–75th** (inner)
+percentile ranges across all {N_SIMS:,} simulations. A wider band means the indexation
+scheme is more sensitive to how the fund performs. The median line is the "middle" outcome.
+
+### The historical dotted line
+
+The black dotted line (where shown) uses **estimated USS funding ratios** derived from
+published triennial valuations (2008, 2011, 2014, 2017, 2020, 2023) with linear
+interpolation for in-between years and rough estimates for 2009–2010 and 2021–2022.
+The historical upside is CPI (no return-sharing) since we don't yet have precise
+annual portfolio return data.
+
+These are best-guess estimates — see the data notes for full documentation.
+
+### What this model does *not* capture
+
+- Correlation between equity returns and inflation (in reality, bad equity years and
+  high inflation can coincide, amplifying the downside of CI).
+- Correlation across years (real equity returns are modelled as i.i.d., ignoring
+  mean-reversion or momentum).
+- Changes to the USS asset allocation over time (the 67%/33% equity/bond split is held
+  constant throughout the simulation).
+- USS-specific investment strategy details (liability-driven investment hedging, etc.).
+
+A future enhancement ("realish scenarios") would replace the random draws with
+bootstrapped or perturbed versions of actual historical asset-class return time series,
+grounding the simulations in real market data. See `data/uss_historical_fr_notes.md`.
+""")
+
+if _show_historical:
+    with st.expander("Historical funding ratio data (download / inspect)"):
+        _hf_display = pd.read_csv(_hist_fr_csv)
+        st.dataframe(_hf_display, use_container_width=True)
+        st.download_button(
+            "Download CSV",
+            data=_hf_display.to_csv(index=False).encode(),
+            file_name="uss_historical_fr.csv",
+            mime="text/csv",
+        )
+        st.caption(
+            "Triennial valuation figures from USS published reports. "
+            "Interpolated years and 2009–2010 estimates are approximate. "
+            "See `data/uss_historical_fr_notes.md` in the repository for full source notes."
+        )
 
 # ---------------------------------------------------------------------------
 # Expander: model notes
