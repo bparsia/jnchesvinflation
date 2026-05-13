@@ -40,7 +40,7 @@ selected = st.sidebar.multiselect(
 )
 show_nominal = st.sidebar.checkbox("Show nominal salaries", value=False)
 show_inflation_only = st.sidebar.checkbox(
-    "Show inflation-only line", value=False,
+    "Show inflation-only line", value=True,
     help="Adds a dashed line showing what each salary would be if it had only "
          "tracked inflation from the baseline date, with no real pay rises or cuts."
 )
