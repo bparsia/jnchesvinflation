@@ -158,7 +158,7 @@ fig.update_layout(
     hovermode="x unified",
     legend_title="Spine point",
 )
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, width="stretch")
 
 # ---------------------------------------------------------------------------
 # Summary table
@@ -186,7 +186,7 @@ for sp in selected:
 if summary_rows:
     st.dataframe(
         pd.DataFrame(summary_rows).set_index("Spine point"),
-        use_container_width=True,
+        width="stretch",
     )
 else:
     st.info("No data available for the selected spine points at this baseline date.")
@@ -204,4 +204,4 @@ if selected:
     )
     pivot.index.name = "Effective date"
     pivot.columns = [f"SP {c}" for c in pivot.columns]
-    st.dataframe(pivot.style.format("£{:,.0f}"), use_container_width=True)
+    st.dataframe(pivot.style.format("£{:,.0f}"), width="stretch")

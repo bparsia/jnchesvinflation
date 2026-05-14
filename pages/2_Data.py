@@ -89,7 +89,7 @@ display.columns = [
     "Nominal salary (£)", f"Real salary (£, {BASE_YEAR} {measure} prices)"
 ]
 
-st.dataframe(display, use_container_width=True, hide_index=True)
+st.dataframe(display, width="stretch", hide_index=True)
 st.caption(f"{len(display):,} rows")
 
 csv = display.to_csv(index=False)

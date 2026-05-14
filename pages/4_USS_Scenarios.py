@@ -312,7 +312,7 @@ with tab_overview:
     add_fan(fig_nom, projection_years, gci_p,    COLOURS["Graded CI"], "Graded CI")
     fig_nom.update_layout(xaxis_title="Year", yaxis_title="Monthly pension (£)",
                           hovermode="x unified", legend_title="Scenario")
-    st.plotly_chart(fig_nom, use_container_width=True)
+    st.plotly_chart(fig_nom, width="stretch")
 
     # --- Funding ratio ---
     st.subheader("Funding ratio over time")
@@ -334,7 +334,7 @@ with tab_overview:
         ))
     fig_fr.update_layout(xaxis_title="Year", yaxis_title="Funding ratio (%)",
                          showlegend=_show_historical, yaxis=dict(ticksuffix="%"))
-    st.plotly_chart(fig_fr, use_container_width=True)
+    st.plotly_chart(fig_fr, width="stretch")
 
     # --- P(CI fires) ---
     st.subheader("P(CI trigger fires) by year")
@@ -356,7 +356,7 @@ with tab_overview:
                     range=[0, max(cpi_steps) * 2.2]),
         hovermode="x unified", legend=dict(x=0.01, y=0.99),
     )
-    st.plotly_chart(fig_prob, use_container_width=True)
+    st.plotly_chart(fig_prob, width="stretch")
 
     # --- Real pension ---
     st.subheader(f"Real monthly pension (£, {start_year} prices)")
@@ -405,7 +405,7 @@ with tab_overview:
         yaxis_title=f"Monthly pension (£, {start_year} prices)",
         hovermode="x unified", legend_title="Scenario",
     )
-    st.plotly_chart(fig_real, use_container_width=True)
+    st.plotly_chart(fig_real, width="stretch")
 
 # ============================================================
 # TAB 2: Head-to-head
@@ -478,7 +478,7 @@ with tab_hh:
         yaxis_title=f"Monthly pension (£, {start_year} prices)",
         hovermode="x unified", legend_title="Scenario",
     )
-    st.plotly_chart(fig_hh, use_container_width=True)
+    st.plotly_chart(fig_hh, width="stretch")
 
 # ---------------------------------------------------------------------------
 # Final year outcome distribution — top-level so anchor links work
@@ -564,7 +564,7 @@ fig_box.update_layout(
     xaxis_title=f"Monthly pension (£, {start_year} prices)",
     yaxis_title="", showlegend=False, height=460,
 )
-st.plotly_chart(fig_box, use_container_width=True)
+st.plotly_chart(fig_box, width="stretch")
 
 # ---- Quartile summary ----
 st.subheader("Quartile summary")
@@ -585,7 +585,7 @@ st.dataframe(
          "95th %ile": f"£{q[95]:,.0f}"}
         for label, q in rows
     ]).set_index("Scenario"),
-    use_container_width=True,
+    width="stretch",
 )
 
 # ---------------------------------------------------------------------------
@@ -657,7 +657,7 @@ grounding the simulations in real market data. See `data/uss_historical_fr_notes
 if _show_historical:
     with st.expander("Historical funding ratio data (download / inspect)"):
         _hf_display = pd.read_csv(_hist_fr_csv)
-        st.dataframe(_hf_display, use_container_width=True)
+        st.dataframe(_hf_display, width="stretch")
         st.download_button(
             "Download CSV",
             data=_hf_display.to_csv(index=False).encode(),
