@@ -31,7 +31,7 @@ _BJP_CSS = """
 
 
 def inject_bjp_css() -> None:
-    st.html(_BJP_CSS)
+    st.markdown(_BJP_CSS, unsafe_allow_html=True)
 
 
 def bjp(text: str) -> None:
