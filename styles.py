@@ -32,4 +32,4 @@ def bjp(text: str) -> None:
         p.strip() if p.strip().startswith("<h") else f'<p style="{_P}">{p.strip()}</p>'
         for p in paras if p.strip()
     )
-    st.markdown(f'<div style="{_DIV}">{html}</div>', unsafe_allow_html=True)
+    st.html(f'<div style="{_DIV}">{html}</div>')
