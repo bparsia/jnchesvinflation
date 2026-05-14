@@ -2,7 +2,7 @@
 import re
 import streamlit as st
 
-_DIV  = ('font-family: Georgia, "Times New Roman", serif; font-style: italic; '
+_DIV  = ("font-family: Georgia, 'Times New Roman', serif; font-style: italic; "
          'background-color: #fdf8f0; border-left: 4px solid #c9953a; '
          'padding: 1rem 1.25rem; margin: 1rem 0 1rem 0; '
          'border-radius: 0 6px 6px 0; color: #3d2e10; line-height: 1.75;')
