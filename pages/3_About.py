@@ -16,9 +16,9 @@ Other text and the app itself has been developed using an AI coding tool, Claude
 
 Primarily, this gathers and visualises the effect of inflation on the **JNCHES (Joint Negotiating Committee for Higher Education Staff)** national pay spine for UK Higher Education. Roughly, you can see the effects of inflation minus whatever increases we've managed to win. It's pretty brutal.
 
-With this chart you can validate the UCU claim that our salaries have been eroded by 30%. Not *every* analysis will get you that and it won't be true for all spine points (the very low end gets upward pressure from the living wage...and is cheaper...and, properly, the unions try to weigh things to the lowest paid). However, it's pretty accurate for most UCU HE member spine points (and use RPI).
+With this chart you can validate the UCU claim that our salaries have been eroded by 30%. Not *every* analysis will get you that and it won't be true for all spine points (the very low end gets upward pressure from the living wage...and is cheaper...and, properly, the unions try to weigh things to the lowest paid). However, 30% is pretty accurate for most UCU HE member spine points (30s-50s) *if* you use RPI as the inflation measure (though CPI isn't *that* different).
 
-Probably the most commonly most helpful graph is the default: A good spread of spine points and starting from our salary peak, 2009. (If you do start of the data i.e., 2006, we actually had some real terms pay rises in there, but then it's all down hill.)
+Probably the most helpful graph is the default: A good spread of spine points and starting from our salary peak, 2009. (If you do start of the data i.e., 2006, we actually had some real terms pay rises in there, but then it's all down hill.)
 
 The dashed horizontal lines show, over time, what we'd need to be earning *now* (ok in 2024) to have no loss in purchasing power. Going down means losing purchasing power. It's grim! 
 
@@ -29,7 +29,7 @@ I don't think the UCU pay modeller is super helpful. It's terrible and it does s
 
 1. You don't see *anything* until you've entered some numbers. That inhibits use.
 2. It is tedious to compare things. I love me a good default but I do think being able to delve is critical. So being able to test CPI vs. RPI, starting points, and see multiple spine points makes a big difference. Also, you can guesstimate where you are just from my initial graph with default values. That's good for sharing.
-3. The didn't release the data. It was annoying to extract the spine point data even with Claude assisting. It's in PDFs because UCEA sucks. I think this is useful data to have for other projects including by other people!
+3. UCU didn't release the data they extracted. It was annoying to extract the spine point data even with Claude assisting. It's in PDFs because UCEA sucks. I think this is useful data to have for other projects including by other people!
 
 I care a lot about the presentation of information so this was fun.
 
@@ -39,13 +39,20 @@ Er...Bijan Parsia, Professor of Computer Science at the University of Manchester
 # Use of AI declaration
 The data extraction scripts, Streamlit scripts, and some text was done by Claude CLI, an AI coding tool, under my direction. The code is all on Github. As the code itself is written by a tool, I do not believe that it is copyrightable in most jurisdictions, so no one owns it.
 
-Whether it is at all possible to use any or any existing LLM based system ethically is an interesting question. As a Professor of Computer Science I have an obligation to my students especially in Software Engineering to teach them about these tools, the effect on methodology etc. and I cannot do that (at least, not well) without have experiential knowledge. This project would have taken an infeasibly long time for me to do by hand, given my current schedule. (And I would have 100% manually extracted the data. Tedious, but I was driven batty by the inconsistent PDFs when Claude was writing scripts!!!) The resulting code does not use an LLM so one could build on it and let me be your sin-eater.
+Whether it is at all possible to use any existing LLM based system (or, more radically, any *possible* LLM based system) ethically is an interesting question. As a Professor of Computer Science I have an obligation to my students especially in Software Engineering to teach them about these tools, the effect on methodology etc. and I cannot do that (at least, not well) without have experiential knowledge. This project would have taken an infeasibly long time for me to do by hand, given my current schedule. (And I would have 100% manually extracted the data. Tedious, but I was driven batty by the inconsistent PDFs when Claude was writing scripts!!!) The resulting code does not use an LLM so one could build on it and let me be your sin-eater.
 
 So, from the point of view of totally clean hands, I don't have them. But I personally think while not ideal, it is ok enough for me to do it.
 
 # Project status and roadmap
+## Spine Points
 
 The Spine Points vs. Inflation are pretty well baked (though comments and corrections welcome). I would like to tease out first vs. final offers and some estimates around associated action. First vs. final gives us a (loose) idea of the marginal benefit of UCU/JNCHES negotiation. (I mean the lines just go down so the high level assessment is that we aren't making a large difference...but maybe! Gotta look to *know*.) One challenge is estimating the cost of action (to UCU, to members directly, to institutions). Honestly, that's a bit of a research project and I'd welcome expert collaboration.
+
+I also want to model total value of an uplift (i.e., the overall cost to the sector) as well as distributional burden (i.e., cost to institutions). This requires employment data...lots of employment data. Once you have that, it's just adding things up.
+
+I got a request from Alex Pritchard to incorporate some what if modelign on changes to the spine point structure itself, e.g., adding points at the top, changing the difference between points, etc. That made me think it would be cool to model Grades and Role mappings (which are *outside* of JNCHES). Given these are under institutional control, it requires institution specific data and it's not like it's all in one form or in one place.
+
+## USS Scenarios
 
 The USS Scenarios is no where near done. It really is a very initial attempt to explore visualisations around conditional indexation but that quickly gets into first order modelling issues. And *that* gets into issues around investment strategies, valuations and valuation approaches, contributions...once you want to do rather realistic simulation of possibilities, you have to figure out a fair bit of that stuff if only to be able to attribute effects.
 
@@ -56,10 +63,15 @@ Pensions have a lot of moving parts and they interact a lot.
 I would like to have a fairly complete model of pensions (including TPS) and, ultimately, of total compensation (pay + pensions over lifetimes). But again, a ton of work and definitely a research paper out of it. Collaborators, welcome!
 
 # UCU Commons projects
-This is one of a series of projects we're working on at UCU Commons. Currently the are mostly "make data intelligible" and "model future improvements to the UCU website" style.
+This is one of a series of projects we're working on at UCU Commons. Currently they are mostly "make data intelligible" and "model future improvements to the UCU website" style.
 
 Good understanding is essential to good decision making. Democratising good understanding means doing the work to make both underlying information and analsyes built on that intelligible.
 
-Another current project nearing maturing is the [UCU Election Data](https://ucuelectionsdata.streamlit.app/) app which tries to make all historical UCU national election data accessible and intelligible.
+Another current project nearing maturing is the [UCU Election Data](https://ucuelectionsdata.streamlit.app/) app which tries to make all historical UCU national election data accessible and intelligible. Related UCU Commons efforts include:
 
+* [TL;DRs](https://ucucommons.org/tag/tldr/): Discursive attempts to explain and issue or decision. I think these were good but 1) they take a lot of effort and need to be fresh each time, 2) they are mostly "read only" so hard to build upon, and 3) because discursive, they have more of a mix of data, interpretation, and analysis. I strove for balance in writing them, but it's tricky. These are, I think, moribund. Only I did them and I've not done one in a while. I do some election and other write ups on my personal [blog](http://bparsia.wordpres.com) but I don't adhere tothe TL;DR discipline.
+* [N](https://ucucommons.org/tag/nec-report/)/[HEC](https://ucucommons.org/tag/hec-report/) reports. This a more recent effort to get out stuff about N/HEC meetings from the UCU Commons N/HEC members. (We, alas, don't have any FEC members but would happy to help support FEC reports.) This came out of frustration around the opacity of N/HEC decision making. Minutes are late and not very informative. We obviously have perspectives and understandings that we'd like to share. We take notes during the meeting in a share document then write things up to release roughly in conjunction with the draft minutes. (This has provided a bit of a forcing function on getting the draft minutes out.) There's a lot of factual info in these but they very much are "The UCU Commons view of the meeting", thus they equally give insight into *the meeting* and to *our thinking*. I dont' think we distort, slant, or mislead in any way (not true of other reports and comments I've seen from other NEC members, i.e., I've had uncorrected untruths about thinks I've said circulated on Bluesky by NEC members.) I think these are great! I do very very little work on them :)
+* The UCU Commons Newsletter ([6 May 2026 edition](https://ucucommons.org/ucu-commons-newsletter-16-6-may-2026/); working on getting our tags sorted). This is produced fortnightly and aims to highlight key UCU and HE sector stuff both that we're doing and beyond. I also think this is great! But as discursive, it does require reading One More Thing.
+
+If you have a project idea on how to make things more understandable about UCU, it's sectors and issues, or arbitrary hard to understand things, let us know! Happy to chat.
 """)
