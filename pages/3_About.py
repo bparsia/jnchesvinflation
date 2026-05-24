@@ -50,17 +50,18 @@ The Spine Points vs. Inflation are pretty well baked (though comments and correc
 
 I also want to model total value of an uplift (i.e., the overall cost to the sector) as well as distributional burden (i.e., cost to institutions). This requires employment data...lots of employment data. Once you have that, it's just adding things up.
 
-I got a request from Alex Pritchard to incorporate some what if modelign on changes to the spine point structure itself, e.g., adding points at the top, changing the difference between points, etc. That made me think it would be cool to model Grades and Role mappings (which are *outside* of JNCHES). Given these are under institutional control, it requires institution specific data and it's not like it's all in one form or in one place.
+I got a request from Alex Pritchard to incorporate some what if modeling on changes to the spine point structure itself, e.g., adding points at the top, changing the difference between points, etc. That made me think it would be cool to model Grades and Role mappings (which are *outside* of JNCHES). Given these are under institutional control, it requires institution specific data and it's not like it's all in one form or in one place.
 
-## USS Scenarios
+## Casualised Pay
+The current modeller works well for jobs with more or less continual pay over at least a year and best for people with continuous employment of at least 5-10 years. But what about people with very patchy job patterns?
 
-The USS Scenarios is no where near done. It really is a very initial attempt to explore visualisations around conditional indexation but that quickly gets into first order modelling issues. And *that* gets into issues around investment strategies, valuations and valuation approaches, contributions...once you want to do rather realistic simulation of possibilities, you have to figure out a fair bit of that stuff if only to be able to attribute effects.
+Honestly, I don't really know how to go about that on an individual level. One might be able to figure out sectoral aggregates and work back from there.
 
-For example, my semi-historical scenario (i.e., using actual and interpolated historical funding ratios), all the CI approaches are dominated by the soft cap. But 1) we didn't have the soft cap over that history, 2) we had an extremely goofy valuation methodology, and 3) we had a goofy investment strategy tied ot the goofy valuation methodology. We know we won't have the goofy valuation methodology going forward so it's not helpful to tie us determinatively to the historical goofy numbers when trying to *project* the effects of CI.
+One challenge is that there are at least two dimensions of pay erosion there: deflation of value and pattern/number of hours. So tricky. I welcome ideas.
 
-Pensions have a lot of moving parts and they interact a lot.
+## Total compensation
 
-I would like to have a fairly complete model of pensions (including TPS) and, ultimately, of total compensation (pay + pensions over lifetimes). But again, a ton of work and definitely a research paper out of it. Collaborators, welcome!
+Elsewhere, I'm working on modelling USS stuff (I currently serve on SWG and am running at Congress 2026 for negotiator). I'd like to merge that (and something analogous for TPS) in to create a picture of total (pay related) compensation over time.
 
 # UCU Commons projects
 This is one of a series of projects we're working on at UCU Commons. Currently they are mostly "make data intelligible" and "model future improvements to the UCU website" style.
