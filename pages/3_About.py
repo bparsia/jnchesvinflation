@@ -23,9 +23,11 @@ Probably the most helpful graph is the default: A good spread of spine points an
 The dashed horizontal lines show, over time, what we'd need to be earning *now* (ok in 2024) to have no loss in purchasing power. Going down means losing purchasing power. It's grim! 
 
 # Why is this?
-UCU Commons member Michael Bartlett saw another Streamlit project I have built and said he wanted " a tool where staff can put their spinal point and start date in and see how much pay theyve lost to inflation since they joined". I, being excessive, did this even after pointing Michael to the [UCU pay modeller](https://www.ucu.org.uk/HEpaymodeller).
+UCU Commons member Michael Bartlett saw another Streamlit project I have built and said he wanted "a tool where staff can put their spinal point and start date in and see how much pay they've lost to inflation since they joined". 
 
-I don't think the UCU pay modeller is super helpful. It's terrible and it does seem to get the same results (assuming similar inputs), but:
+I, being excessive, made this thing even after pointing Michael to the [UCU pay modeller](https://www.ucu.org.uk/HEpaymodeller).
+
+I don't think the UCU pay modeller is super helpful. It's not *terrible* and it does seem to get the same results (assuming similar inputs), but:
 
 1. You don't see *anything* until you've entered some numbers. That inhibits use.
 2. It is tedious to compare things. I love me a good default but I do think being able to delve is critical. So being able to test CPI vs. RPI, starting points, and see multiple spine points makes a big difference. Also, you can guesstimate where you are just from my initial graph with default values. That's good for sharing.
