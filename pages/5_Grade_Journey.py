@@ -19,7 +19,8 @@ GRADE_FILES = {
     "UoM": ROOT / "data" / "uom_grade_spine.csv",
     "MMU": ROOT / "data" / "mmu_grade_spine.csv",
 }
-COLOURS = {"UoM": "#1f77b4", "MMU": "#e05a00"}
+COLOURS      = {"UoM": "#1f77b4",               "MMU": "#e05a00"}
+COLOURS_FILL = {"UoM": "rgba(31,119,180,0.15)", "MMU": "rgba(224,90,0,0.15)"}
 
 grade_dfs = {inst: pd.read_csv(path) for inst, path in GRADE_FILES.items()}
 
@@ -113,8 +114,7 @@ for inst in ["UoM", "MMU"]:
         x=fan_df["year"].tolist() + fan_df["year"].tolist()[::-1],
         y=fan_df["hi"].tolist() + fan_df["lo"].tolist()[::-1],
         fill="toself",
-        fillcolor=colour.replace(")", ", 0.15)").replace("rgb", "rgba") if "rgb" in colour
-                  else colour + "26",  # hex + alpha
+        fillcolor=COLOURS_FILL[inst],
         line=dict(color="rgba(0,0,0,0)"),
         hoverinfo="skip",
         name=f"{inst} G{grade} range",
