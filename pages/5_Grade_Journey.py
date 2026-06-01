@@ -147,9 +147,12 @@ for i, (inst, grade) in selections.items():
 
         fig.add_trace(go.Scatter(
             x=journey_df["year"], y=journey_df["real"],
-            mode="lines+markers",
+            mode="lines+markers+text",
             line=dict(color=colour, width=2),
             marker=dict(size=6),
+            text=journey_df["spine_point"],
+            textposition="top center",
+            textfont=dict(size=9, color=colour),
             name=f"{inst} G{grade} journey",
             hovertemplate=(
                 f"{inst} G{{grade}} %{{x}}: £%{{y:,.0f}}<br>"
