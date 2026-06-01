@@ -27,13 +27,15 @@ UCU Commons member Michael Bartlett saw another Streamlit project I have built a
 
 I, being excessive, made this thing even after pointing Michael to the [UCU pay modeller](https://www.ucu.org.uk/HEpaymodeller).
 
-I don't think the UCU pay modeller is super helpful. It's not *terrible* and it does seem to get the same results (assuming similar inputs), but:
+I don't think the UCU pay modeller has the same focus. We converge on same results (assuming similar inputs) (yay!), but:
 
-1. You don't see *anything* until you've entered some numbers. That inhibits use.
-2. It is tedious to compare things. I love me a good default but I do think being able to delve is critical. So being able to test CPI vs. RPI, starting points, and see multiple spine points makes a big difference. Also, you can guesstimate where you are just from my initial graph with default values. That's good for sharing.
+1. You don't see *anything* until you've entered some numbers. That inhibits  various uses.
+2. It is tedious to compare things. I love me a good default but I do think being able to delve is critical. So being able to test CPI vs. RPI, starting points, and see multiple spine points makes a big difference for many uses. Also, you can guesstimate where you are just from my initial graph with default values. That's good for sharing.
 3. UCU didn't release the data they extracted. It was annoying to extract the spine point data even with Claude assisting. It's in PDFs because UCEA sucks. I think this is useful data to have for other projects including by other people!
 
-I care a lot about the presentation of information so this was fun.
+So this has a different focus.
+
+Also, I care a lot about the presentation of information so this was fun for me to play around with.
 
 # Who did this?
 Er...Bijan Parsia, Professor of Computer Science at the University of Manchester, 2025-2026 NEC Representative for Disabled Members (HE), and UCU Commons member.
