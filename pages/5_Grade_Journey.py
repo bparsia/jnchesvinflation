@@ -19,8 +19,8 @@ GRADE_FILES = {
     "UoM": ROOT / "data" / "uom_grade_spine.csv",
     "MMU": ROOT / "data" / "mmu_grade_spine.csv",
 }
-COLOURS      = {"UoM": "#1f77b4",               "MMU": "#e05a00"}
-COLOURS_FILL = {"UoM": "rgba(31,119,180,0.15)", "MMU": "rgba(224,90,0,0.15)"}
+SERIES_COLOURS      = ["#1f77b4",               "#e05a00"]
+SERIES_COLOURS_FILL = ["rgba(31,119,180,0.15)", "rgba(224,90,0,0.15)"]
 
 grade_dfs = {inst: pd.read_csv(path) for inst, path in GRADE_FILES.items()}
 
@@ -33,12 +33,17 @@ show_journey = st.sidebar.checkbox("Show journey lines", value=True)
 
 st.sidebar.divider()
 selections = {}
-for inst in ["UoM", "MMU"]:
-    st.sidebar.markdown(f"**{inst}**")
+defaults = [("UoM", None), ("MMU", None)]
+for i, (default_inst, _) in enumerate(defaults):
+    label = f"Series {i + 1}"
+    st.sidebar.markdown(f"**{label}**")
+    inst = st.sidebar.selectbox("Institution", list(GRADE_FILES.keys()),
+                                index=list(GRADE_FILES.keys()).index(default_inst),
+                                key=f"inst_{i}")
     gdf = grade_dfs[inst]
     grades = sorted(gdf["grade"].unique())
-    default_idx = len(grades) // 2
-    selections[inst] = st.sidebar.selectbox(f"Grade", grades, index=default_idx, key=f"grade_{inst}")
+    grade = st.sidebar.selectbox("Grade", grades, index=len(grades) // 2, key=f"grade_{i}")
+    selections[i] = (inst, grade)
 
 # ---------------------------------------------------------------------------
 # Load salary data — latest pay date per year per spine point
@@ -100,9 +105,9 @@ def build_fan_and_journey(inst: str, grade: int):
 # ---------------------------------------------------------------------------
 fig = go.Figure()
 
-for inst in ["UoM", "MMU"]:
-    grade = selections[inst]
-    colour = COLOURS[inst]
+for i, (inst, grade) in selections.items():
+    colour = SERIES_COLOURS[i]
+    fill   = SERIES_COLOURS_FILL[i]
     fan_df, journey_df = build_fan_and_journey(inst, grade)
 
     if fan_df is None or fan_df.empty:
@@ -114,7 +119,7 @@ for inst in ["UoM", "MMU"]:
         x=fan_df["year"].tolist() + fan_df["year"].tolist()[::-1],
         y=fan_df["hi"].tolist() + fan_df["lo"].tolist()[::-1],
         fill="toself",
-        fillcolor=COLOURS_FILL[inst],
+        fillcolor=fill,
         line=dict(color="rgba(0,0,0,0)"),
         hoverinfo="skip",
         name=f"{inst} G{grade} range",
@@ -157,8 +162,8 @@ for inst in ["UoM", "MMU"]:
             fig.add_vline(
                 x=stuck_year,
                 line_dash="dash", line_color=colour, line_width=1, opacity=0.5,
-                annotation_text=f"{inst} ceiling",
-                annotation_position="top left" if inst == "MMU" else "top right",
+                annotation_text=f"{inst} G{grade} ceiling",
+                annotation_position="top left" if i == 1 else "top right",
                 annotation_font_size=10, annotation_font_color=colour,
             )
 
