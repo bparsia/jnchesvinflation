@@ -14,6 +14,7 @@ overview = st.Page("pages/0_Overview.py", title="Overview", icon="📈", default
 spine = st.Page("pages/1_SpinePoints.py", title="Spine Points", icon="🔢")
 data = st.Page("pages/2_Data.py", title="Raw Data", icon="📋")
 about = st.Page("pages/3_About.py", title="About", icon="ℹ️")
+grade_journey = st.Page("pages/5_Grade_Journey.py", title="Grade Journey", icon="🚶")
 
-pg = st.navigation([overview, spine, data, about])
+pg = st.navigation([overview, spine, data, about, grade_journey])
 pg.run()
