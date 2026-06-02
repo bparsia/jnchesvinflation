@@ -54,7 +54,7 @@ The Spine Points vs. Inflation are pretty well baked (though comments and correc
 
 I also want to model total value of an uplift (i.e., the overall cost to the sector) as well as distributional burden (i.e., cost to institutions). This requires employment data...lots of employment data. Once you have that, it's just adding things up.
 
-I got a request from Alex Pritchard to incorporate some what if modeling on changes to the spine point structure itself, e.g., adding points at the top, changing the difference between points, etc. That made me think it would be cool to model Grades and Role mappings (which are *outside* of JNCHES). Given these are under institutional control, it requires institution specific data and it's not like it's all in one form or in one place.
+I got a request from Alex Prichard to incorporate some what if modeling on changes to the spine point structure itself, e.g., adding points at the top, changing the difference between points, etc. That made me think it would be cool to model Grades and Role mappings (which are *outside* of JNCHES). Given these are under institutional control, it requires institution specific data and it's not like it's all in one form or in one place.
 
 ## Casualised Pay
 The current modeller works well for jobs with more or less continual pay over at least a year and best for people with continuous employment of at least 5-10 years. But what about people with very patchy job patterns?
