@@ -4,6 +4,9 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from utils import INDICES, ROOT, get_data
+from styles import inject_bjp_css, bjp
+
+inject_bjp_css()
 
 st.title("Grade Journey")
 st.caption(
@@ -11,7 +14,16 @@ st.caption(
     "Journey line tracks someone starting at the grade floor, incrementing one "
     "spine point per year until the ceiling. Real values use the start year as base."
 )
+bjp('''# EXPERIMENTAL PAGE!
+I've just started with a couple of sets of grades and already it's clear that one needs some role
+mapping to get a coherent cross instituion picture. E.g., it's not just that the University of Manchester's
+grade 5 is a *little* different from Manchester Metropolitan's, but that they are completely different and are 
+almost certainly associated with different roles. I don't know that pairwise comparison is what we centrally want here
+...it's useful but I think we want a map of roles to spine points, ultimately.
 
+But, the worker's pay journey is nice. Assuming you start at the bottome of a grade, it shows the increase due to within grade 
+spine point incrementing, then the pure devaluation due to inflation that happens there after.
+''')
 # ---------------------------------------------------------------------------
 # Load grade mappings
 # ---------------------------------------------------------------------------
