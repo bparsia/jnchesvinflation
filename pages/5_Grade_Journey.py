@@ -87,8 +87,9 @@ def build_fan_and_journey(inst: str, grade: int):
     if not auto_sps:
         return None, None
 
-    start_sp = auto_sps[0]
-    ceiling_sp = auto_sps[-1]
+    available_sps = set(annual["spine_point"].unique())
+    start_sp   = auto_sps[0]
+    ceiling_sp = next((sp for sp in reversed(auto_sps) if sp in available_sps), auto_sps[0])
 
     fan, journey = [], []
     for yr in years:
