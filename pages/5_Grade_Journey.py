@@ -192,3 +192,32 @@ fig.update_layout(
 )
 
 st.plotly_chart(fig, width="stretch")
+
+# ---------------------------------------------------------------------------
+# Grade definition tables
+# ---------------------------------------------------------------------------
+st.subheader("Grade definitions")
+cols = st.columns(len(selections))
+for col, (i, (inst, grade)) in zip(cols, selections.items()):
+    gdf = grade_dfs[inst]
+    rows = []
+    for g in sorted(gdf["grade"].unique()):
+        g_rows = gdf[gdf["grade"] == g]
+        auto_sps = sorted(g_rows[g_rows["type"] == "auto"]["spine_point"])
+        exc_sps  = sorted(g_rows[g_rows["type"] == "exceptional"]["spine_point"])
+        rows.append({
+            "Grade": g,
+            "Auto SPs": f"{auto_sps[0]}–{auto_sps[-1]}" if auto_sps else "—",
+            "Exceptional SPs": ", ".join(str(s) for s in exc_sps) if exc_sps else "—",
+        })
+    tdf = pd.DataFrame(rows)
+    col.markdown(f"**{inst}**")
+    col.dataframe(
+        tdf.style.apply(
+            lambda row: ["background-color: #e8f0fb; font-weight: bold" if row["Grade"] == grade
+                         else "" for _ in row],
+            axis=1,
+        ),
+        hide_index=True,
+        use_container_width=True,
+    )
